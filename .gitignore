@@ -35,6 +35,9 @@ appsettings.*.json
 # User secrets
 **/secrets.json
 
+# Node Modules
+node_modules/
+
 # SQLite (if used later)
 *.db
 *.sqlite
