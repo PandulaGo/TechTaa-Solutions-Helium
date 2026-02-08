@@ -1,0 +1,276 @@
+@Helium.Api_HostAddress = http://localhost:5297
+@token = REPLACE_WITH_JWT
+@userId = 00000000-0000-0000-0000-000000000001
+@vehicleId = 00000000-0000-0000-0000-000000000002
+@fuelEntryId = 00000000-0000-0000-0000-000000000003
+@chargingEntryId = 00000000-0000-0000-0000-000000000004
+@maintenanceRecordId = 00000000-0000-0000-0000-000000000005
+
+### AUTH – Register
+POST {{Helium.Api_HostAddress}}/api/Auth/register
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "password": "Passw0rd!",
+  "preferredCurrency": "USD"
+}
+
+###
+
+### AUTH – Login
+POST {{Helium.Api_HostAddress}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "password": "Passw0rd!"
+}
+
+### Copy the token from the response into @token above.
+
+###
+
+### VEHICLES – Get paged list for user
+GET {{Helium.Api_HostAddress}}/api/Vehicles?userId={{userId}}&pageNumber=1&pageSize=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### VEHICLES – Get by id
+GET {{Helium.Api_HostAddress}}/api/Vehicles/{{vehicleId}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### VEHICLES – Create
+POST {{Helium.Api_HostAddress}}/api/Vehicles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "name": "Daily Driver",
+  "make": "Toyota",
+  "model": "Corolla",
+  "year": 2020,
+  "type": "Petrol",      // VehicleType enum: Petrol, Diesel, Hybrid, Electric
+  "vin": "JTDBR32E720123456"
+}
+
+###
+
+### VEHICLES – Update
+PUT {{Helium.Api_HostAddress}}/api/Vehicles/{{vehicleId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Daily Driver Updated",
+  "make": "Toyota",
+  "model": "Corolla",
+  "year": 2021,
+  "type": "Petrol",
+  "vin": "JTDBR32E720123456"
+}
+
+###
+
+### VEHICLES – Delete
+DELETE {{Helium.Api_HostAddress}}/api/Vehicles/{{vehicleId}}
+Authorization: Bearer {{token}}
+
+###
+
+### FUEL ENTRIES – Get paged list for vehicle
+GET {{Helium.Api_HostAddress}}/api/FuelEntries?vehicleId={{vehicleId}}&pageNumber=1&pageSize=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### FUEL ENTRIES – Get by id
+GET {{Helium.Api_HostAddress}}/api/FuelEntries/{{fuelEntryId}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### FUEL ENTRIES – Create
+POST {{Helium.Api_HostAddress}}/api/FuelEntries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": "{{vehicleId}}",
+  "date": "2025-02-01",
+  "odometerReadingKm": 12345,
+  "liters": 40.5,
+  "cost": 75.99,
+  "fuelStationName": "Shell Main Street",
+  "receiptImagePath": null
+}
+
+###
+
+### FUEL ENTRIES – Update
+PUT {{Helium.Api_HostAddress}}/api/FuelEntries/{{fuelEntryId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "date": "2025-02-02",
+  "odometerReadingKm": 12450,
+  "liters": 38.2,
+  "cost": 70.50,
+  "fuelStationName": "BP Highway",
+  "receiptImagePath": null
+}
+
+###
+
+### FUEL ENTRIES – Delete
+DELETE {{Helium.Api_HostAddress}}/api/FuelEntries/{{fuelEntryId}}
+Authorization: Bearer {{token}}
+
+###
+
+### CHARGING ENTRIES – Get paged list for vehicle
+GET {{Helium.Api_HostAddress}}/api/ChargingEntries?vehicleId={{vehicleId}}&pageNumber=1&pageSize=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### CHARGING ENTRIES – Get by id
+GET {{Helium.Api_HostAddress}}/api/ChargingEntries/{{chargingEntryId}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### CHARGING ENTRIES – Create
+POST {{Helium.Api_HostAddress}}/api/ChargingEntries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": "{{vehicleId}}",
+  "date": "2025-02-01",
+  "odometerReadingKm": 5000,
+  "kwhUsed": 25.3,
+  "cost": 12.75,
+  "chargingLocation": "City EV Station"
+}
+
+###
+
+### CHARGING ENTRIES – Update
+PUT {{Helium.Api_HostAddress}}/api/ChargingEntries/{{chargingEntryId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "date": "2025-02-02",
+  "odometerReadingKm": 5100,
+  "kwhUsed": 26.1,
+  "cost": 13.10,
+  "chargingLocation": "Office Garage Charger"
+}
+
+###
+
+### CHARGING ENTRIES – Delete
+DELETE {{Helium.Api_HostAddress}}/api/ChargingEntries/{{chargingEntryId}}
+Authorization: Bearer {{token}}
+
+###
+
+### MAINTENANCE RECORDS – Get paged list for vehicle
+GET {{Helium.Api_HostAddress}}/api/MaintenanceRecords?vehicleId={{vehicleId}}&pageNumber=1&pageSize=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### MAINTENANCE RECORDS – Get by id
+GET {{Helium.Api_HostAddress}}/api/MaintenanceRecords/{{maintenanceRecordId}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### MAINTENANCE RECORDS – Create (with reminder)
+POST {{Helium.Api_HostAddress}}/api/MaintenanceRecords
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": "{{vehicleId}}",
+  "maintenanceType": "Oil Change",
+  "odometerReadingKm": 15000,
+  "serviceDate": "2025-02-01",
+  "notes": "Changed oil and filter",
+  "receiptImagePath": null,
+  "reminder": {
+    "id": null,
+    "intervalType": "Mileage",      // ReminderIntervalType: Mileage, Time
+    "intervalValue": 10000,
+    "nextDueDate": null,
+    "nextDueMileageKm": 25000
+  }
+}
+
+###
+
+### MAINTENANCE RECORDS – Update
+PUT {{Helium.Api_HostAddress}}/api/MaintenanceRecords/{{maintenanceRecordId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "maintenanceType": "Oil Change + Inspection",
+  "odometerReadingKm": 15050,
+  "serviceDate": "2025-02-02",
+  "notes": "Oil change and full inspection",
+  "receiptImagePath": null,
+  "reminder": {
+    "id": null,
+    "intervalType": "Time",
+    "intervalValue": 6,
+    "nextDueDate": "2025-08-02",
+    "nextDueMileageKm": null
+  }
+}
+
+###
+
+### MAINTENANCE RECORDS – Delete
+DELETE {{Helium.Api_HostAddress}}/api/MaintenanceRecords/{{maintenanceRecordId}}
+Authorization: Bearer {{token}}
+
+###
+
+### REPORTS – Vehicle efficiency
+GET {{Helium.Api_HostAddress}}/api/Reports/vehicle-efficiency/{{vehicleId}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+###
+
+### FILES – Upload receipt (multipart/form-data)
+### Note: Use your client’s file picker; this is how the request should look.
+POST {{Helium.Api_HostAddress}}/api/Files/receipts
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="receipt.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/local/receipt.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

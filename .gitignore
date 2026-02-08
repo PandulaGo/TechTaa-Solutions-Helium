@@ -1,0 +1,43 @@
+# Build results
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# NuGet
+**/packages/
+*.nupkg
+*.snupkg
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# ASP.NET Core
+appsettings.Development.json
+appsettings.*.json
+
+# User secrets
+**/secrets.json
+
+# SQLite (if used later)
+*.db
+*.sqlite
+
+# Local storage
+**/storage/
