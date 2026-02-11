@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Application\Helium.Application\Helium.Application.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\Helium.Infrastructure\Helium.Infrastructure.csproj" />
+    <ProjectReference Include="..\Helium.Application\Helium.Application.csproj" />
+    <ProjectReference Include="..\Helium.Infrastructure\Helium.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

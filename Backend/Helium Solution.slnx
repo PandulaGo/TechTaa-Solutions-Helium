@@ -1,15 +1,6 @@
 <Solution>
-  <Folder Name="/src/" />
-  <Folder Name="/src/Api/">
-    <Project Path="src/Api/Helium.Api/Helium.Api.csproj" />
-  </Folder>
-  <Folder Name="/src/Application/">
-    <Project Path="src/Application/Helium.Application/Helium.Application.csproj" />
-  </Folder>
-  <Folder Name="/src/Domain/">
-    <Project Path="src/Domain/Helium.Domain/Helium.Domain.csproj" />
-  </Folder>
-  <Folder Name="/src/Infrastructure/">
-    <Project Path="src/Infrastructure/Helium.Infrastructure/Helium.Infrastructure.csproj" />
-  </Folder>
+  <Project Path="Helium.Api/Helium.Api.csproj" />
+  <Project Path="Helium.Application/Helium.Application.csproj" />
+  <Project Path="Helium.Domain/Helium.Domain.csproj" />
+  <Project Path="Helium.Infrastructure/Helium.Infrastructure.csproj" />
 </Solution>

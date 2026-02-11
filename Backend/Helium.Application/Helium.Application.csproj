@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Domain\Helium.Domain\Helium.Domain.csproj" />
+    <ProjectReference Include="..\Helium.Domain\Helium.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
