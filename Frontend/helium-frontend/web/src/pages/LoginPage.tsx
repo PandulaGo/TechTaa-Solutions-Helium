@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Modal, Button } from 'react-bootstrap';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -180,102 +181,75 @@ const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      {showSignup && (
-        <div
-          className="modal fade show d-block"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="signupModalLabel"
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg rounded-4">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title" id="signupModalLabel">
-                  Create your account
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={handleCloseSignup}
-                />
-              </div>
-              <div className="modal-body pt-3">
-                <form onSubmit={handleSignupSubmit}>
-                  <div className="mb-3">
-                    <label htmlFor="signup-name" className="form-label small fw-medium">
-                      Full name
-                    </label>
-                    <input
-                      id="signup-name"
-                      type="text"
-                      className="form-control form-control-sm rounded-3"
-                      value={signupName}
-                      onChange={(e) => setSignupName(e.target.value)}
-                      placeholder="John Doe"
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label htmlFor="signup-email" className="form-label small fw-medium">
-                      Email address
-                    </label>
-                    <input
-                      id="signup-email"
-                      type="email"
-                      className="form-control form-control-sm rounded-3"
-                      value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label htmlFor="signup-password" className="form-label small fw-medium">
-                      Password
-                    </label>
-                    <input
-                      id="signup-password"
-                      type="password"
-                      className="form-control form-control-sm rounded-3"
-                      value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label htmlFor="signup-confirm-password" className="form-label small fw-medium">
-                      Confirm password
-                    </label>
-                    <input
-                      id="signup-confirm-password"
-                      type="password"
-                      className="form-control form-control-sm rounded-3"
-                      value={signupConfirmPassword}
-                      onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  <div className="d-flex justify-content-end gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary btn-sm rounded-3"
-                      onClick={handleCloseSignup}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary btn-sm rounded-3"
-                    >
-                      Sign up
-                    </button>
-                  </div>
-                </form>
-              </div>
+      <Modal show={showSignup} onHide={handleCloseSignup} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Create your account</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSignupSubmit}>
+            <div className="mb-3">
+              <label htmlFor="signup-name" className="form-label small fw-medium">
+                Full name
+              </label>
+              <input
+                id="signup-name"
+                type="text"
+                className="form-control form-control-sm rounded-3"
+                value={signupName}
+                onChange={(e) => setSignupName(e.target.value)}
+                placeholder="John Doe"
+              />
             </div>
-          </div>
-          <div className="modal-backdrop fade show" onClick={handleCloseSignup} />
-        </div>
-      )}
+            <div className="mb-3">
+              <label htmlFor="signup-email" className="form-label small fw-medium">
+                Email address
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                className="form-control form-control-sm rounded-3"
+                value={signupEmail}
+                onChange={(e) => setSignupEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="mb-3">
+              <label htmlFor="signup-password" className="form-label small fw-medium">
+                Password
+              </label>
+              <input
+                id="signup-password"
+                type="password"
+                className="form-control form-control-sm rounded-3"
+                value={signupPassword}
+                onChange={(e) => setSignupPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="signup-confirm-password" className="form-label small fw-medium">
+                Confirm password
+              </label>
+              <input
+                id="signup-confirm-password"
+                type="password"
+                className="form-control form-control-sm rounded-3"
+                value={signupConfirmPassword}
+                onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+            <div className="d-flex justify-content-end gap-2">
+              <Button variant="outline-secondary" size="sm" onClick={handleCloseSignup}>
+                Cancel
+              </Button>
+              <Button variant="primary" size="sm" type="submit">
+                Sign up
+              </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

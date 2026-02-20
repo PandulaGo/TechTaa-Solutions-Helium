@@ -16,7 +16,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
+        var connectionString = configuration.GetConnectionString("HeliumCoreConnection")
             ?? "Server=(localdb)\\mssqllocaldb;Database=HeliumAppDb;Trusted_Connection=True;MultipleActiveResultSets=true";
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();

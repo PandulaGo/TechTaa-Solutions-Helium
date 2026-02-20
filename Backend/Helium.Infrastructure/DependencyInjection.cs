@@ -20,7 +20,7 @@ public static class DependencyInjection
     {
         services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
+        var connectionString = configuration.GetConnectionString("HeliumCoreConnection")
             ?? "Server=(localdb)\\mssqllocaldb;Database=HeliumAppDb;Trusted_Connection=True;MultipleActiveResultSets=true";
 
         services.AddDbContext<AppDbContext>(options =>

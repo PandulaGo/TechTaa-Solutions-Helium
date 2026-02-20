@@ -17,8 +17,9 @@ builder.Host.UseSerilog((context, services, configuration) =>
 builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Swagger temporarily disabled due to Swashbuckle type load issue on this runtime.
+// builder.Services.AddEndpointsApiExplorer();
+// builder.Services.AddSwaggerGen();
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -51,13 +52,15 @@ var app = builder.Build();
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger middleware disabled while package compatibility is resolved.
+// if (app.Environment.IsDevelopment())
+// {
+// 	app.UseSwagger();
+// 	app.UseSwaggerUI();
+// }
 
-app.UseHttpsRedirection();
+// Force HTTP only (no automatic HTTPS redirect).
+// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
