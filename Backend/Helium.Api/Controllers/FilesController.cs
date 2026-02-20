@@ -26,7 +26,7 @@ public class FilesController : ControllerBase
         }
 
         await using var stream = file.OpenReadStream();
-        var path = await _fileStorageService.SaveAsync(stream, file.FileName, file.ContentType, cancellationToken);
+        var path = await _fileStorageService.SaveAsync(stream, file.FileName, cancellationToken);
         return Ok(new { path });
     }
 }
