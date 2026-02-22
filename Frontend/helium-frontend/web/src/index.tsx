@@ -1,8 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+// Removed bootstrap imports. Tailwind CSS is used instead.
 import './index.css';
 
 const apiBaseUrl = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:5297';

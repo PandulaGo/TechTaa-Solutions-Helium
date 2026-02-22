@@ -8,8 +8,23 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+
+// ...existing code...
+
+// ...existing using statements...
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add CORS policy to allow frontend requests
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy
+            .WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration).ReadFrom.Services(services));
@@ -47,10 +62,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+
 var app = builder.Build();
+
+// Ensure database is created and apply migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetService<Helium.Infrastructure.Persistence.AppDbContext>();
+    if (dbContext != null)
+    {
+        Console.WriteLine("Helium App | Applying database migrations...");
+        dbContext.Database.Migrate();
+    }
+}
 
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+// Enable CORS for frontend
+app.UseCors("AllowFrontend");
 
 // Swagger middleware disabled while package compatibility is resolved.
 // if (app.Environment.IsDevelopment())
@@ -68,3 +97,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+

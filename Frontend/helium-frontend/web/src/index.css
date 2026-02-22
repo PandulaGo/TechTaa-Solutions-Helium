@@ -1,3 +1,5 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Remove any @tailwind directives and Tailwind-specific styles. Keep only Bootstrap or custom styles. */

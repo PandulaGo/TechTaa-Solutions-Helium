@@ -5,16 +5,17 @@ This is the web frontend for the Helium application, built using React and style
 ## Project Structure
 
 - `src/`: Contains the source code for the React application.
-  - `main.tsx`: The entry point for the React application.
-  - `App.tsx`: The main application component that sets up routing and layout.
-  - `components/`: Contains reusable components.
-    - `PrimaryButton.tsx`: A customizable button component styled with Tailwind CSS.
+  - `index.tsx`: Entry point for the React application and backend health check.
+  - `App.tsx`: Main application component that sets up routing (home, login, signup).
   - `pages/`: Contains the different pages of the application.
-    - `HomePage.tsx`: The home page of the web application.
-  - `index.css`: Global CSS styles, including Tailwind CSS imports.
+    - `HomePage.tsx`: Simple home page.
+    - `LoginPage.tsx`: Login page that posts to `/api/auth/login`.
+    - `SignupPage.tsx`: Registration page that posts to `/api/auth/register`.
+  - `index.css`: Global CSS styles, including Tailwind CSS directives.
 
 - `public/`: Contains static files.
   - `index.html`: The main HTML file for the React application.
+  - `appsettings.json`: Frontend configuration file containing `apiBaseUrl` for the backend.
 
 ## Getting Started
 
@@ -27,20 +28,37 @@ To get started with the web application, follow these steps:
    ```
 
 2. **Install dependencies**:
-   ```
-   npm install
-   ```
+  ```
+  npm install
+  ```
 
-3. **Run the application**:
-   ```
-   npm start
-   ```
+3. **Configure backend URL**:
+  - Edit `public/appsettings.json` and set the `apiBaseUrl` to your backend URL, for example:
+    ```
+    {
+     "apiBaseUrl": "http://localhost:5297"
+    }
+    ```
 
-The application will be available at `http://localhost:3000`.
+4. **Run the application**:
+  ```
+  npm start
+  ```
+
+The application will be available at `http://localhost:3000` and will call the backend using the `apiBaseUrl` from `appsettings.json`.
 
 ## Tailwind CSS
 
-This project uses Tailwind CSS for styling. You can customize the styles in the `tailwind.config.js` file.
+This project uses Tailwind CSS exclusively for styling. You can customize the styles in the `tailwind.config.js` file.
+
+The forms (login and signup) use Tailwind utility classes for layout, typography, and interaction states.
+
+## Authentication Flows
+
+- **Signup**: Sends a POST request to `${apiBaseUrl}/api/auth/register` with `FirstName`, `LastName`, `Email`, `Password`, `PreferredCurrency`.
+  - Enforces password rules: min 8 characters, at least one uppercase, one lowercase, one digit, and one special character.
+  - Confirms password via a separate field.
+- **Login**: Sends a POST request to `${apiBaseUrl}/api/auth/login` and expects a JWT token on success.
 
 ## Contributing
 

@@ -89,7 +89,7 @@ Backend
 - DI setup in `Helium.Infrastructure.DependencyInjection`.
 
 ## Web API Layer
-- Controllers:
+Controllers:
   - `AuthController`
   - `VehiclesController`
   - `FuelEntriesController`
@@ -97,10 +97,24 @@ Backend
   - `MaintenanceRecordsController`
   - `ReportsController`
   - `FilesController`
-- Global exception handling middleware.
-- Serilog request logging.
-- JWT authentication + authorization.
-- Background service: `MaintenanceReminderBackgroundService`.
+Global exception handling middleware.
+Serilog request logging.
+JWT authentication + authorization.
+Background service: `MaintenanceReminderBackgroundService`.
+
+### Registration Endpoint
+The registration endpoint expects the following fields:
+- `FirstName` (required, max 100 chars)
+- `LastName` (required, max 100 chars)
+- `Email` (required, valid email, max 200 chars)
+- `Password` (required, min 8 chars, must include uppercase, lowercase, digit, special character)
+- `PreferredCurrency` (required, max 10 chars)
+
+Password requirements are enforced both in backend and frontend.
+
+### Frontend Updates
+- Bootstrap removed from web app, replaced with Tailwind CSS for styling.
+- Registration form updated to match backend requirements, including confirm password and live password validation.
 
 ## Configuration
 - `appsettings.json` includes:
@@ -108,8 +122,23 @@ Backend
   - JWT settings
   - Serilog configuration
 
+The API listens by default on:
+- `http://localhost:5297`
+- `https://localhost:7165`
+
+Cross-origin requests from the frontend are enabled via a CORS policy that allows `http://localhost:3000`.
+
 ## Build Status
 - `dotnet build` succeeds (after package version alignment).
+
+## Running the Backend
+
+From the repository root:
+1. Navigate to the backend folder:
+  - `cd Backend`
+2. Run the API:
+  - `dotnet run --project Helium.Api/Helium.Api.csproj`
+3. The API will start on the URLs configured in `Properties/launchSettings.json`.
 
 ## Next Steps (Optional)
 - Add migrations + seed data
