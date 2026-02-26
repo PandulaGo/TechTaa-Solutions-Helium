@@ -13,6 +13,8 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
             .SetBasePath(basePath)
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.Development.json", optional: true)
+            // Load user secrets (shared ID with Helium.Api) so design-time EF uses the real connection string
+            .AddUserSecrets<AppDbContextFactory>(optional: true, reloadOnChange: false)
             .AddEnvironmentVariables()
             .Build();
 
