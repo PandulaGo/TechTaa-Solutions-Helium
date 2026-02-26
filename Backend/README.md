@@ -59,7 +59,8 @@ Backend
   - `MaintenanceRecord`
   - `MaintenanceReminder`
 - Enums:
-  - `VehicleType` (Petrol, Diesel, Hybrid, Electric)
+  - `PowertrainType` (Petrol, Diesel, Hybrid, Electric)
+  - `VehicleBodyType` (Car, Van, Bike, Truck, Suv)
   - `ReminderIntervalType` (Mileage, Time)
 - Base entity: `EntityBase` with `Id`, `CreatedAt`, `UpdatedAt`.
 

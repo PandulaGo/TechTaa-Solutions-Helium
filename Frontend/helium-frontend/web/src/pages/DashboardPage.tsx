@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const DashboardPage: React.FC = () => {
+  const [isFabOpen, setIsFabOpen] = useState(false);
+
+  const toggleFab = () => {
+    setIsFabOpen((prev) => !prev);
+  };
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-100">
       {/* Sidebar */}
@@ -10,7 +15,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <nav className="flex-1 px-4 py-4 space-y-2 text-sm">
           <a href="/dashboard" className="block px-3 py-2 rounded-md bg-blue-50 text-blue-700 font-medium">Overview</a>
-          <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Vehicles</a>
+          <a href="/vehicles" className="block px-3 py-2 rounded-md hover:bg-gray-100">Vehicles</a>
           <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Fuel Entries</a>
           <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Charging Entries</a>
           <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Maintenance</a>
@@ -22,7 +27,7 @@ const DashboardPage: React.FC = () => {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-4 md:p-8">
+      <main className="relative flex-1 p-4 md:p-8">
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <div>
             <h2 className="text-2xl font-semibold text-gray-800">Overview</h2>
@@ -60,6 +65,37 @@ const DashboardPage: React.FC = () => {
             <li>View reports for fuel consumption and costs over time.</li>
           </ul>
         </section>
+
+        {/* Floating action button */}
+        <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8">
+          {/* Expanded options */}
+          {isFabOpen && (
+            <div className="mb-3 flex flex-col items-end space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = '/vehicles/new';
+                }}
+                className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 shadow hover:bg-gray-50 border border-gray-200"
+              >
+                <span className="mr-2 text-gray-400 text-lg">+</span>
+                Vehicle Add
+              </button>
+              {/* Placeholder for future options */}
+              {/* <button ...>Another action</button> */}
+            </div>
+          )}
+
+          {/* Main + button */}
+          <button
+            type="button"
+            onClick={toggleFab}
+            aria-label="Add new record"
+            className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center text-3xl sm:text-4xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            {isFabOpen ? '×' : '+'}
+          </button>
+        </div>
       </main>
     </div>
   );

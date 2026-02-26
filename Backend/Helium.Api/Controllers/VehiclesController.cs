@@ -3,6 +3,7 @@ using Helium.Application.Interfaces.Services;
 using Helium.Application.Models.Vehicles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Helium.Api.Controllers;
 
@@ -35,6 +36,16 @@ public class VehiclesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<VehicleDto>> Create(VehicleCreateDto dto, CancellationToken cancellationToken)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst("sub")?.Value;
+
+        if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        dto.UserId = userId;
+
         var result = await _vehicleService.CreateAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetVehicle), new { id = result.Id }, result);
     }

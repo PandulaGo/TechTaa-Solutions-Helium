@@ -53,12 +53,13 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "userId": "{{userId}}",
+  "userId": "{{userId}}", // will be set from the authenticated user on the API side
   "name": "Daily Driver",
   "make": "Toyota",
   "model": "Corolla",
   "year": 2020,
-  "type": "Petrol",      // VehicleType enum: Petrol, Diesel, Hybrid, Electric
+  "powertrainType": "Petrol",   // PowertrainType enum: Petrol, Diesel, Hybrid, Electric
+  "bodyType": "Car",            // VehicleBodyType enum: Car, Van, Bike, Truck, Suv
   "vin": "JTDBR32E720123456"
 }
 
@@ -74,7 +75,8 @@ Content-Type: application/json
   "make": "Toyota",
   "model": "Corolla",
   "year": 2021,
-  "type": "Petrol",
+  "powertrainType": "Hybrid",
+  "bodyType": "Car",
   "vin": "JTDBR32E720123456"
 }
 

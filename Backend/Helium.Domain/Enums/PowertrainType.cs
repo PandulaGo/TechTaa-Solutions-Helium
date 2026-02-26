@@ -1,6 +1,6 @@
 namespace Helium.Domain.Enums;
 
-public enum VehicleType
+public enum PowertrainType
 {
     Petrol = 0,
     Diesel = 1,

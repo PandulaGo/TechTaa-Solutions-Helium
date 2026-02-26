@@ -252,7 +252,10 @@ namespace Helium.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("Type")
+                    b.Property<int>("PowertrainType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BodyType")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
