@@ -20,8 +20,16 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResult<VehicleDto>>> GetVehicles([FromQuery] Guid userId, [FromQuery] PaginationQuery query, CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<VehicleDto>>> GetVehicles([FromQuery] PaginationQuery query, CancellationToken cancellationToken)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst("sub")?.Value;
+
+        if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
         var result = await _vehicleService.GetPagedAsync(userId, query, cancellationToken);
         return Ok(result);
     }

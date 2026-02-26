@@ -1,9 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 
 interface AppSettings {
   apiBaseUrl: string;
+}
+
+interface VehicleDto {
+  id: string;
+  name: string;
+  make: string;
+  model: string;
+  year?: number | null;
+  powertrainType: number;
+  bodyType: number;
+  vin?: string | null;
 }
 
 enum VehicleBodyType {
@@ -21,12 +32,14 @@ enum PowertrainType {
   Electric = 3,
 }
 
-const VehicleCreatePage: React.FC = () => {
+const VehicleEditPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const history = useHistory();
 
   const [apiBaseUrl, setApiBaseUrl] = useState<string | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [loadingVehicle, setLoadingVehicle] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -56,6 +69,48 @@ const VehicleCreatePage: React.FC = () => {
 
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    const loadVehicle = async () => {
+      if (!apiBaseUrl || !id) {
+        return;
+      }
+
+      setLoadingVehicle(true);
+      setError(null);
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get<VehicleDto>(`${apiBaseUrl}/api/vehicles/${id}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+
+        const vehicle = response.data;
+        setForm({
+          name: vehicle.name,
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year ? vehicle.year.toString() : '',
+          bodyType: vehicle.bodyType.toString(),
+          powertrainType: vehicle.powertrainType.toString(),
+          vin: vehicle.vin ?? '',
+        });
+      } catch (err: any) {
+        console.error('Failed to load vehicle', err);
+        const backendDetail = err?.response?.data?.detail as string | undefined;
+        setError(backendDetail || 'Failed to load vehicle details.');
+      } finally {
+        setLoadingVehicle(false);
+      }
+    };
+
+    if (!loadingSettings && apiBaseUrl) {
+      loadVehicle();
+    }
+  }, [apiBaseUrl, id, loadingSettings]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -100,8 +155,8 @@ const VehicleCreatePage: React.FC = () => {
     setError(null);
     setSuccess(null);
 
-    if (!apiBaseUrl) {
-      setError('Backend URL is not loaded yet. Please try again in a moment.');
+    if (!apiBaseUrl || !id) {
+      setError('Backend URL is not ready yet. Please try again.');
       return;
     }
 
@@ -109,11 +164,10 @@ const VehicleCreatePage: React.FC = () => {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
 
     try {
       const token = localStorage.getItem('token');
-
       const payload = {
         name: form.name.trim(),
         make: form.make.trim(),
@@ -124,42 +178,29 @@ const VehicleCreatePage: React.FC = () => {
         vin: form.vin ? form.vin.trim() : null,
       };
 
-      const response = await axios.post(`${apiBaseUrl}/api/vehicles`, payload, {
+      await axios.put(`${apiBaseUrl}/api/vehicles/${id}`, payload, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
 
-      if (response.status === 201) {
-        setSuccess('Vehicle created successfully.');
-        setForm({
-          name: '',
-          make: '',
-          model: '',
-          year: '',
-          bodyType: '',
-          powertrainType: '',
-          vin: '',
-        });
-      } else {
-        setError('Failed to create vehicle. Please try again.');
-      }
+      setSuccess('Vehicle updated successfully.');
+      setTimeout(() => {
+        history.push('/vehicles');
+      }, 1000);
     } catch (err: any) {
-      console.error('Vehicle creation error', err);
-
+      console.error('Vehicle update error', err);
       const data = err?.response?.data;
       const backendDetail = data?.detail as string | undefined;
       const backendError = data?.error as string | undefined;
       const backendTitle = data?.title as string | undefined;
-
-      // Handle ASP.NET Core validation problem details: errors is a dictionary of field -> messages
       const errors = data?.errors as Record<string, string[]> | undefined;
       let validationMessage: string | undefined;
       if (errors) {
         const parts: string[] = [];
         for (const [field, messages] of Object.entries(errors)) {
-          if (messages && messages.length > 0) {
+          if (messages?.length) {
             parts.push(`${field}: ${messages.join(', ')}`);
           }
         }
@@ -169,10 +210,10 @@ const VehicleCreatePage: React.FC = () => {
       }
 
       setError(
-        validationMessage || backendDetail || backendError || backendTitle || 'Failed to create vehicle.'
+        validationMessage || backendDetail || backendError || backendTitle || 'Failed to update vehicle.'
       );
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -203,13 +244,13 @@ const VehicleCreatePage: React.FC = () => {
             ← Back to Dashboard
           </button>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">Add Vehicle</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">Update Vehicle</h1>
         <p className="text-gray-600 mb-6 text-center text-sm sm:text-base">
-          Enter the details of your vehicle. Fields marked with * are required.
+          Modify the information for your selected vehicle.
         </p>
 
-        {loadingSettings && (
-          <div className="mb-4 text-blue-600 text-sm">Loading settings...</div>
+        {(loadingSettings || loadingVehicle) && (
+          <div className="mb-4 text-indigo-600 text-sm">Loading vehicle details...</div>
         )}
 
         {error && (
@@ -353,17 +394,17 @@ const VehicleCreatePage: React.FC = () => {
           <div className="flex items-center justify-between mt-6">
             <button
               type="button"
-              onClick={() => history.push('/dashboard')}
+              onClick={() => history.push('/vehicles')}
               className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save Vehicle'}
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -372,4 +413,4 @@ const VehicleCreatePage: React.FC = () => {
   );
 };
 
-export default VehicleCreatePage;
+export default VehicleEditPage;

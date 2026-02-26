@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,13 +10,13 @@ namespace Helium.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Rename existing Type column to PowertrainType
+            // Rename existing Type column on Vehicles to PowertrainType
             migrationBuilder.RenameColumn(
                 name: "Type",
                 table: "Vehicles",
                 newName: "PowertrainType");
 
-            // Add new BodyType column (default to Car = 0 for existing rows)
+            // Add new BodyType column (non-null, default Car = 0 for existing rows)
             migrationBuilder.AddColumn<int>(
                 name: "BodyType",
                 table: "Vehicles",

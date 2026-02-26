@@ -16,7 +16,7 @@ const DashboardPage: React.FC = () => {
         <nav className="flex-1 px-4 py-4 space-y-2 text-sm">
           <a href="/dashboard" className="block px-3 py-2 rounded-md bg-blue-50 text-blue-700 font-medium">Overview</a>
           <a href="/vehicles" className="block px-3 py-2 rounded-md hover:bg-gray-100">Vehicles</a>
-          <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Fuel Entries</a>
+          <a href="/fuel-entries" className="block px-3 py-2 rounded-md hover:bg-gray-100">Fuel Entries</a>
           <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Charging Entries</a>
           <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Maintenance</a>
           <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Reports</a>
@@ -79,10 +79,18 @@ const DashboardPage: React.FC = () => {
                 className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 shadow hover:bg-gray-50 border border-gray-200"
               >
                 <span className="mr-2 text-gray-400 text-lg">+</span>
-                Vehicle Add
+                Add Vehicle
               </button>
-              {/* Placeholder for future options */}
-              {/* <button ...>Another action</button> */}
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = '/fuel-entries/new';
+                }}
+                className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 shadow hover:bg-gray-50 border border-gray-200"
+              >
+                <span className="mr-2 text-gray-400 text-lg">+</span>
+                Add Fuel Entry
+              </button>
             </div>
           )}
 
