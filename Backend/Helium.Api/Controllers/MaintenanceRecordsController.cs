@@ -19,9 +19,17 @@ public class MaintenanceRecordsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResult<MaintenanceRecordDto>>> GetRecords([FromQuery] Guid vehicleId, [FromQuery] PaginationQuery query, CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<MaintenanceRecordDto>>> GetRecords([FromQuery] Guid? vehicleId, [FromQuery] PaginationQuery query, CancellationToken cancellationToken)
     {
         var result = await _maintenanceService.GetPagedAsync(vehicleId, query, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("due")]
+    public async Task<ActionResult<IEnumerable<MaintenanceRecordDto>>> GetDueReminders([FromQuery] DateOnly? asOfDate, CancellationToken cancellationToken)
+    {
+        var effectiveDate = asOfDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var result = await _maintenanceService.GetDueRemindersAsync(effectiveDate, cancellationToken);
         return Ok(result);
     }
 

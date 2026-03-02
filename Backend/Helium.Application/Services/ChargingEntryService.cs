@@ -1,4 +1,5 @@
 using AutoMapper;
+using System.Collections.Generic;
 using Helium.Application.Common.Extensions;
 using Helium.Application.Common.Models;
 using Helium.Application.Interfaces.Persistence;
@@ -36,18 +37,44 @@ public class ChargingEntryService : IChargingEntryService
         return entity is null ? null : _mapper.Map<ChargingEntryDto>(entity);
     }
 
-    public async Task<PagedResult<ChargingEntryDto>> GetPagedAsync(Guid vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ChargingEntryDto>> GetPagedAsync(Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
     {
         var chargingQuery = _unitOfWork.Repository<ChargingEntry>()
-            .Query()
-            .Where(c => c.VehicleId == vehicleId);
+            .Query();
+
+        if (vehicleId.HasValue && vehicleId.Value != Guid.Empty)
+        {
+            var id = vehicleId.Value;
+            chargingQuery = chargingQuery.Where(c => c.VehicleId == id);
+        }
 
         chargingQuery = ApplySorting(chargingQuery, query);
         var paged = chargingQuery.ToPagedResult(query);
 
+        var vehicleLookup = new Dictionary<Guid, string?>();
+        var vehicleIds = paged.Items.Select(c => c.VehicleId).Distinct().ToList();
+        if (vehicleIds.Count > 0)
+        {
+            vehicleLookup = _unitOfWork.Repository<Vehicle>().Query()
+                .Where(v => vehicleIds.Contains(v.Id))
+                .Select(v => new { v.Id, v.Vin })
+                .ToDictionary(v => v.Id, v => v.Vin);
+        }
+
+        var dtoItems = paged.Items.Select(entry =>
+        {
+            var dto = _mapper.Map<ChargingEntryDto>(entry);
+            if (vehicleLookup.TryGetValue(entry.VehicleId, out var vin))
+            {
+                dto.VehicleVin = vin;
+            }
+
+            return dto;
+        }).ToList();
+
         return await Task.FromResult(new PagedResult<ChargingEntryDto>
         {
-            Items = paged.Items.Select(_mapper.Map<ChargingEntryDto>).ToList(),
+            Items = dtoItems,
             Page = paged.Page,
             PageSize = paged.PageSize,
             TotalCount = paged.TotalCount

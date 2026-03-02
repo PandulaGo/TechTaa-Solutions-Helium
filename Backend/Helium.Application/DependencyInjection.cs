@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IChargingEntryService, ChargingEntryService>();
         services.AddScoped<IMaintenanceService, MaintenanceService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IDashboardService, DashboardService>();
 
         return services;
     }

@@ -9,7 +9,6 @@ interface AppSettings {
 interface VehicleDto {
   id: string;
   name: string;
-  powertrainType: number;
 }
 
 interface PagedResult<T> {
@@ -19,7 +18,14 @@ interface PagedResult<T> {
   totalCount: number;
 }
 
-const FuelEntryCreatePage: React.FC = () => {
+type ReminderIntervalType = 'mileage' | 'time';
+
+const intervalTypeToValue: Record<ReminderIntervalType, number> = {
+  mileage: 0,
+  time: 1,
+};
+
+const MaintenanceEntryCreatePage: React.FC = () => {
   const history = useHistory();
 
   const [apiBaseUrl, setApiBaseUrl] = useState<string | null>(null);
@@ -29,16 +35,17 @@ const FuelEntryCreatePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [vehicleWarning, setVehicleWarning] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     vehicleId: '',
-    date: '',
+    maintenanceType: '',
+    serviceDate: '',
     odometerReadingKm: '',
-    liters: '',
-    cost: '',
-    fuelStationName: '',
+    notes: '',
     receiptImagePath: '',
+    reminderEnabled: false,
+    reminderIntervalType: 'mileage' as ReminderIntervalType,
+    reminderIntervalValue: '',
   });
 
   useEffect(() => {
@@ -94,32 +101,18 @@ const FuelEntryCreatePage: React.FC = () => {
       loadVehicles();
     }
   }, [apiBaseUrl, loadingSettings]);
-  
-  useEffect(() => {
-    if (!form.vehicleId) {
-      setVehicleWarning(null);
-      return;
-    }
 
-    const selectedVehicle = vehicles.find((vehicle) => vehicle.id === form.vehicleId);
-    if (!selectedVehicle) {
-      setVehicleWarning(null);
-      return;
-    }
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const target = e.target;
+    const { name, value } = target;
+    const isCheckbox = target instanceof HTMLInputElement && target.type === 'checkbox';
 
-    const allowedPowertrains = new Set([0, 1, 2]);
-    if (!allowedPowertrains.has(selectedVehicle.powertrainType)) {
-      setVehicleWarning(
-        'Selected vehicle appears to be electric. Fuel entries are intended for petrol, diesel, or hybrid vehicles.'
-      );
-    } else {
-      setVehicleWarning(null);
-    }
-  }, [form.vehicleId, vehicles]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: isCheckbox ? (target as HTMLInputElement).checked : value,
+    }));
     setError(null);
     setSuccess(null);
   };
@@ -129,27 +122,36 @@ const FuelEntryCreatePage: React.FC = () => {
       setError('Vehicle selection is required.');
       return false;
     }
-    if (!form.date) {
-      setError('Date is required.');
+    if (!form.maintenanceType.trim()) {
+      setError('Maintenance type is required.');
+      return false;
+    }
+    if (!form.serviceDate) {
+      setError('Service date is required.');
       return false;
     }
     if (!form.odometerReadingKm || Number(form.odometerReadingKm) < 0) {
       setError('Odometer reading must be zero or greater.');
       return false;
     }
-    if (!form.liters || Number(form.liters) <= 0) {
-      setError('Liters must be greater than zero.');
-      return false;
-    }
-    if (!form.cost || Number(form.cost) < 0) {
-      setError('Cost must be zero or greater.');
-      return false;
-    }
-    if (form.fuelStationName.length > 200) {
-      setError('Fuel station name must be 200 characters or fewer.');
-      return false;
+    if (form.reminderEnabled) {
+      if (!form.reminderIntervalValue || Number(form.reminderIntervalValue) <= 0) {
+        setError('Reminder interval must be greater than zero when reminders are enabled.');
+        return false;
+      }
     }
     return true;
+  };
+
+  const buildReminderPayload = () => {
+    if (!form.reminderEnabled) {
+      return null;
+    }
+
+    return {
+      intervalType: intervalTypeToValue[form.reminderIntervalType],
+      intervalValue: Number(form.reminderIntervalValue),
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -172,15 +174,15 @@ const FuelEntryCreatePage: React.FC = () => {
       const token = localStorage.getItem('token');
       const payload = {
         vehicleId: form.vehicleId,
-        date: form.date,
+        maintenanceType: form.maintenanceType.trim(),
+        serviceDate: form.serviceDate,
         odometerReadingKm: Number(form.odometerReadingKm),
-        liters: Number(form.liters),
-        cost: Number(form.cost),
-        fuelStationName: form.fuelStationName.trim(),
-        receiptImagePath: form.receiptImagePath ? form.receiptImagePath.trim() : null,
+        notes: form.notes.trim() ? form.notes.trim() : null,
+        receiptImagePath: form.receiptImagePath.trim() ? form.receiptImagePath.trim() : null,
+        reminder: buildReminderPayload(),
       };
 
-      const response = await axios.post(`${apiBaseUrl}/api/fuelentries`, payload, {
+      const response = await axios.post(`${apiBaseUrl}/api/maintenancerecords`, payload, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -188,27 +190,28 @@ const FuelEntryCreatePage: React.FC = () => {
       });
 
       if (response.status === 201) {
-        setSuccess('Fuel entry recorded successfully.');
+        setSuccess('Maintenance record saved successfully.');
         setForm({
           vehicleId: '',
-          date: '',
+          maintenanceType: '',
+          serviceDate: '',
           odometerReadingKm: '',
-          liters: '',
-          cost: '',
-          fuelStationName: '',
+          notes: '',
           receiptImagePath: '',
+          reminderEnabled: false,
+          reminderIntervalType: 'mileage',
+          reminderIntervalValue: '',
         });
       } else {
-        setError('Failed to create fuel entry. Please try again.');
+        setError('Failed to create maintenance record. Please try again.');
       }
     } catch (err: any) {
-      console.error('Fuel entry creation error', err);
+      console.error('Maintenance record creation error', err);
 
       const data = err?.response?.data;
       const backendDetail = data?.detail as string | undefined;
       const backendError = data?.error as string | undefined;
       const backendTitle = data?.title as string | undefined;
-
       const errors = data?.errors as Record<string, string[]> | undefined;
       let validationMessage: string | undefined;
       if (errors) {
@@ -224,7 +227,7 @@ const FuelEntryCreatePage: React.FC = () => {
       }
 
       setError(
-        validationMessage || backendDetail || backendError || backendTitle || 'Failed to create fuel entry.'
+        validationMessage || backendDetail || backendError || backendTitle || 'Failed to create maintenance record.'
       );
     } finally {
       setLoading(false);
@@ -244,16 +247,16 @@ const FuelEntryCreatePage: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => history.push('/vehicles')}
+            onClick={() => history.push('/maintenance-records')}
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800"
           >
-            Manage Vehicles
+            View Maintenance Records
           </button>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">Add Fuel Entry</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">Add Maintenance Record</h1>
         <p className="text-gray-600 mb-6 text-center text-sm sm:text-base">
-          Track refueling details for your selected vehicle. Fields marked with * are required.
+          Log maintenance work and optional reminders so you never miss the next service. Fields marked with * are required.
         </p>
 
         {(loadingSettings || loadingVehicles) && (
@@ -293,32 +296,42 @@ const FuelEntryCreatePage: React.FC = () => {
               ))}
             </select>
             {vehicles.length === 0 && !loadingVehicles && (
-              <p className="mt-1 text-xs text-gray-500">
-                No vehicles available. Add a vehicle first so you can log fuel entries.
-              </p>
-            )}
-            {vehicleWarning && (
-              <p className="mt-2 text-sm text-yellow-800 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
-                {vehicleWarning}
-              </p>
+              <p className="mt-1 text-xs text-gray-500">No vehicles available. Add a vehicle first so you can log maintenance.</p>
             )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-                Date *
+              <label htmlFor="maintenanceType" className="block text-sm font-medium text-gray-700 mb-1">
+                Maintenance Type *
               </label>
               <input
-                id="date"
-                name="date"
+                id="maintenanceType"
+                name="maintenanceType"
+                type="text"
+                value={form.maintenanceType}
+                onChange={handleChange}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="e.g. Oil change"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="serviceDate" className="block text-sm font-medium text-gray-700 mb-1">
+                Service Date *
+              </label>
+              <input
+                id="serviceDate"
+                name="serviceDate"
                 type="date"
-                value={form.date}
+                value={form.serviceDate}
                 onChange={handleChange}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="odometerReadingKm" className="block text-sm font-medium text-gray-700 mb-1">
                 Odometer (km) *
@@ -333,59 +346,6 @@ const FuelEntryCreatePage: React.FC = () => {
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="liters" className="block text-sm font-medium text-gray-700 mb-1">
-                Liters *
-              </label>
-              <input
-                id="liters"
-                name="liters"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.liters}
-                onChange={handleChange}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="e.g. 45.5"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-1">
-                Cost *
-              </label>
-              <input
-                id="cost"
-                name="cost"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.cost}
-                onChange={handleChange}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="e.g. 120.75"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="fuelStationName" className="block text-sm font-medium text-gray-700 mb-1">
-                Fuel Station
-              </label>
-              <input
-                id="fuelStationName"
-                name="fuelStationName"
-                type="text"
-                value={form.fuelStationName}
-                onChange={handleChange}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Station or location name"
-              />
-            </div>
 
             <div>
               <label htmlFor="receiptImagePath" className="block text-sm font-medium text-gray-700 mb-1">
@@ -398,9 +358,84 @@ const FuelEntryCreatePage: React.FC = () => {
                 value={form.receiptImagePath}
                 onChange={handleChange}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Optional receipt link"
+                placeholder="https://..."
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+              Notes
+            </label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows={3}
+              value={form.notes}
+              onChange={handleChange}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="Add any technician notes or upcoming needs"
+            />
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Reminder</p>
+                <p className="text-xs text-gray-500">Set a schedule so we'll nudge you when the next service is due.</p>
+              </div>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="reminderEnabled"
+                  checked={form.reminderEnabled}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700">Enable</span>
+              </label>
+            </div>
+
+            {form.reminderEnabled && (
+              <div className="mt-4 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="reminderIntervalType" className="block text-sm font-medium text-gray-700 mb-1">
+                      Interval Type
+                    </label>
+                    <select
+                      id="reminderIntervalType"
+                      name="reminderIntervalType"
+                      value={form.reminderIntervalType}
+                      onChange={handleChange}
+                      className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm bg-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="mileage">Mileage (km)</option>
+                      <option value="time">Time (days)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="reminderIntervalValue" className="block text-sm font-medium text-gray-700 mb-1">
+                      Interval Value
+                    </label>
+                    <input
+                      id="reminderIntervalValue"
+                      name="reminderIntervalValue"
+                      type="number"
+                      min="1"
+                      value={form.reminderIntervalValue}
+                      onChange={handleChange}
+                      className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      placeholder={form.reminderIntervalType === 'mileage' ? 'e.g. 10000 km' : 'e.g. 180 days'}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Mileage reminders will trigger once the odometer increases by the interval value. Time reminders use the service date plus the number of days specified.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between mt-6">
@@ -416,7 +451,7 @@ const FuelEntryCreatePage: React.FC = () => {
               disabled={loading}
               className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save Fuel Entry'}
+              {loading ? 'Saving...' : 'Save Maintenance Record'}
             </button>
           </div>
         </form>
@@ -425,4 +460,4 @@ const FuelEntryCreatePage: React.FC = () => {
   );
 };
 
-export default FuelEntryCreatePage;
+export default MaintenanceEntryCreatePage;

@@ -1,4 +1,5 @@
 using AutoMapper;
+using System.Collections.Generic;
 using Helium.Application.Common.Extensions;
 using Helium.Application.Common.Models;
 using Helium.Application.Interfaces.Persistence;
@@ -36,18 +37,44 @@ public class FuelEntryService : IFuelEntryService
         return entity is null ? null : _mapper.Map<FuelEntryDto>(entity);
     }
 
-    public async Task<PagedResult<FuelEntryDto>> GetPagedAsync(Guid vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<FuelEntryDto>> GetPagedAsync(Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
     {
         var fuelQuery = _unitOfWork.Repository<FuelEntry>()
-            .Query()
-            .Where(f => f.VehicleId == vehicleId);
+            .Query();
+
+        if (vehicleId.HasValue && vehicleId.Value != Guid.Empty)
+        {
+            var id = vehicleId.Value;
+            fuelQuery = fuelQuery.Where(f => f.VehicleId == id);
+        }
 
         fuelQuery = ApplySorting(fuelQuery, query);
         var paged = fuelQuery.ToPagedResult(query);
 
+        var vehicleLookup = new Dictionary<Guid, string?>();
+        var vehicleIds = paged.Items.Select(f => f.VehicleId).Distinct().ToList();
+        if (vehicleIds.Count > 0)
+        {
+            vehicleLookup = _unitOfWork.Repository<Vehicle>().Query()
+                .Where(v => vehicleIds.Contains(v.Id))
+                .Select(v => new { v.Id, v.Vin })
+                .ToDictionary(v => v.Id, v => v.Vin);
+        }
+
+        var dtoItems = paged.Items.Select(entry =>
+        {
+            var dto = _mapper.Map<FuelEntryDto>(entry);
+            if (vehicleLookup.TryGetValue(entry.VehicleId, out var vin))
+            {
+                dto.VehicleVin = vin;
+            }
+
+            return dto;
+        }).ToList();
+
         return await Task.FromResult(new PagedResult<FuelEntryDto>
         {
-            Items = paged.Items.Select(_mapper.Map<FuelEntryDto>).ToList(),
+            Items = dtoItems,
             Page = paged.Page,
             PageSize = paged.PageSize,
             TotalCount = paged.TotalCount

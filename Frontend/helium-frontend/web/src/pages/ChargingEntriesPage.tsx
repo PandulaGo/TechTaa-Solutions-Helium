@@ -6,16 +6,15 @@ interface AppSettings {
   apiBaseUrl: string;
 }
 
-interface FuelEntryDto {
+interface ChargingEntryDto {
   id: string;
   vehicleId: string;
   vehicleVin?: string | null;
   date: string;
   odometerReadingKm: number;
-  liters: number;
+  kwhUsed: number;
   cost: number;
-  fuelStationName: string;
-  receiptImagePath?: string | null;
+  chargingLocation: string;
 }
 
 interface PagedResult<T> {
@@ -25,46 +24,15 @@ interface PagedResult<T> {
   totalCount: number;
 }
 
-const FuelEntriesPage: React.FC = () => {
+const ChargingEntriesPage: React.FC = () => {
   const history = useHistory();
 
   const [apiBaseUrl, setApiBaseUrl] = useState<string | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
-  const [entries, setEntries] = useState<FuelEntryDto[]>([]);
+  const [entries, setEntries] = useState<ChargingEntryDto[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  const loadEntries = async () => {
-    if (!apiBaseUrl) {
-      return;
-    }
-
-    setLoadingEntries(true);
-    setError(null);
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get<PagedResult<FuelEntryDto>>(`${apiBaseUrl}/api/fuelentries`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        params: {
-          page: 1,
-          pageSize: 200,
-        },
-      });
-
-      setEntries(response.data?.items ?? []);
-    } catch (err: any) {
-      console.error('Failed to load fuel entries', err);
-      const backendDetail = err?.response?.data?.detail as string | undefined;
-      setError(backendDetail || 'Unable to load fuel entries.');
-    } finally {
-      setLoadingEntries(false);
-    }
-  };
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -83,18 +51,43 @@ const FuelEntriesPage: React.FC = () => {
     loadSettings();
   }, []);
 
-  useEffect(() => {
-    if (!loadingSettings && apiBaseUrl) {
-      loadEntries();
-    }
-  }, [apiBaseUrl, loadingSettings]);
+    const loadEntries = async () => {
+      if (!apiBaseUrl) {
+        return;
+      }
+
+      setLoadingEntries(true);
+      setError(null);
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get<PagedResult<ChargingEntryDto>>(`${apiBaseUrl}/api/chargingentries`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          params: {
+            page: 1,
+            pageSize: 200,
+          },
+        });
+
+        setEntries(response.data?.items ?? []);
+      } catch (err: any) {
+        console.error('Failed to load charging entries', err);
+        const backendDetail = err?.response?.data?.detail as string | undefined;
+        setError(backendDetail || 'Unable to load charging entries.');
+      } finally {
+        setLoadingEntries(false);
+      }
+    };
 
   const handleDelete = async (entryId: string) => {
     if (!apiBaseUrl) {
       return;
     }
 
-    const confirmed = window.confirm('Are you sure you want to delete this fuel entry?');
+    const confirmed = window.confirm('Are you sure you want to delete this charging entry?');
     if (!confirmed) {
       return;
     }
@@ -104,24 +97,30 @@ const FuelEntriesPage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${apiBaseUrl}/api/fuelentries/${entryId}`, {
+      await axios.delete(`${apiBaseUrl}/api/chargingentries/${entryId}`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
 
-      setSuccess('Fuel entry deleted.');
+      setSuccess('Charging entry deleted.');
       await loadEntries();
     } catch (err: any) {
-      console.error('Failed to delete fuel entry', err);
+      console.error('Failed to delete charging entry', err);
       const backendDetail = err?.response?.data?.detail as string | undefined;
-      setError(backendDetail || 'Failed to delete fuel entry.');
+      setError(backendDetail || 'Failed to delete charging entry.');
     }
   };
 
+  useEffect(() => {
+    if (!loadingSettings && apiBaseUrl) {
+      loadEntries();
+    }
+  }, [apiBaseUrl, loadingSettings]);
+
   const handleUpdate = (entryId: string) => {
-    history.push(`/fuel-entries/${entryId}/edit`);
+    history.push(`/charging-entries/${entryId}/edit`);
   };
 
   return (
@@ -136,15 +135,15 @@ const FuelEntriesPage: React.FC = () => {
             >
               ← Back to Dashboard
             </button>
-            <h1 className="text-2xl font-semibold text-gray-900">Fuel Entries</h1>
-            <p className="text-sm text-gray-500">Review every recorded refuel with VIN context and quick actions.</p>
+            <h1 className="text-2xl font-semibold text-gray-900">Charging Entries</h1>
+            <p className="text-sm text-gray-500">Review every recorded charging session with VIN context and quick actions.</p>
           </div>
           <button
             type="button"
-            onClick={() => history.push('/fuel-entries/new')}
+            onClick={() => history.push('/charging-entries/new')}
             className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
-            + Add Fuel Entry
+            + Add Charging Entry
           </button>
         </div>
 
@@ -165,7 +164,7 @@ const FuelEntriesPage: React.FC = () => {
         )}
 
         <div className="mb-6 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-          Viewing refueling activity across your entire fleet. Add tags or filters later if you need a narrower view.
+          Viewing charging sessions across your entire fleet. Add filters later if you need to zoom in on a specific vehicle.
         </div>
 
         <div className="overflow-x-auto">
@@ -175,31 +174,30 @@ const FuelEntriesPage: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Odometer (km)</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liters</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">kWh Used</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loadingEntries ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500">
-                    Loading fuel entries...
+                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                    Loading charging entries...
                   </td>
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500">
-                    No fuel entries recorded yet.
+                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                    No charging entries recorded yet.
                   </td>
                 </tr>
               ) : (
                 entries.map((entry) => (
                   <tr key={entry.id}>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
                         {entry.vehicleVin?.toUpperCase() || 'N/A'}
                       </span>
                     </td>
@@ -210,27 +208,13 @@ const FuelEntriesPage: React.FC = () => {
                       {entry.odometerReadingKm.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      {entry.liters.toFixed(2)}
+                      {entry.kwhUsed.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                       ${entry.cost.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      {entry.fuelStationName || '—'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-indigo-600">
-                      {entry.receiptImagePath ? (
-                        <a
-                          href={entry.receiptImagePath}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:underline"
-                        >
-                          View receipt
-                        </a>
-                      ) : (
-                        '—'
-                      )}
+                      {entry.chargingLocation || '—'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
                       <div className="inline-flex items-center gap-2">
@@ -261,4 +245,4 @@ const FuelEntriesPage: React.FC = () => {
   );
 };
 
-export default FuelEntriesPage;
+export default ChargingEntriesPage;

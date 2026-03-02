@@ -19,7 +19,7 @@ interface PagedResult<T> {
   totalCount: number;
 }
 
-const FuelEntryCreatePage: React.FC = () => {
+const ChargingEntryCreatePage: React.FC = () => {
   const history = useHistory();
 
   const [apiBaseUrl, setApiBaseUrl] = useState<string | null>(null);
@@ -35,11 +35,29 @@ const FuelEntryCreatePage: React.FC = () => {
     vehicleId: '',
     date: '',
     odometerReadingKm: '',
-    liters: '',
+    kwhUsed: '',
     cost: '',
-    fuelStationName: '',
-    receiptImagePath: '',
+    chargingLocation: '',
   });
+
+  useEffect(() => {
+    if (!form.vehicleId) {
+      setVehicleWarning(null);
+      return;
+    }
+
+    const selectedVehicle = vehicles.find((vehicle) => vehicle.id === form.vehicleId);
+    if (!selectedVehicle) {
+      setVehicleWarning(null);
+      return;
+    }
+
+    if (selectedVehicle.powertrainType !== 3) {
+      setVehicleWarning('Selected vehicle is not electric. Charging entries are typically for electric vehicles.');
+    } else {
+      setVehicleWarning(null);
+    }
+  }, [form.vehicleId, vehicles]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -94,28 +112,6 @@ const FuelEntryCreatePage: React.FC = () => {
       loadVehicles();
     }
   }, [apiBaseUrl, loadingSettings]);
-  
-  useEffect(() => {
-    if (!form.vehicleId) {
-      setVehicleWarning(null);
-      return;
-    }
-
-    const selectedVehicle = vehicles.find((vehicle) => vehicle.id === form.vehicleId);
-    if (!selectedVehicle) {
-      setVehicleWarning(null);
-      return;
-    }
-
-    const allowedPowertrains = new Set([0, 1, 2]);
-    if (!allowedPowertrains.has(selectedVehicle.powertrainType)) {
-      setVehicleWarning(
-        'Selected vehicle appears to be electric. Fuel entries are intended for petrol, diesel, or hybrid vehicles.'
-      );
-    } else {
-      setVehicleWarning(null);
-    }
-  }, [form.vehicleId, vehicles]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -137,16 +133,16 @@ const FuelEntryCreatePage: React.FC = () => {
       setError('Odometer reading must be zero or greater.');
       return false;
     }
-    if (!form.liters || Number(form.liters) <= 0) {
-      setError('Liters must be greater than zero.');
+    if (!form.kwhUsed || Number(form.kwhUsed) <= 0) {
+      setError('kWh used must be greater than zero.');
       return false;
     }
     if (!form.cost || Number(form.cost) < 0) {
       setError('Cost must be zero or greater.');
       return false;
     }
-    if (form.fuelStationName.length > 200) {
-      setError('Fuel station name must be 200 characters or fewer.');
+    if (form.chargingLocation.length > 200) {
+      setError('Charging location must be 200 characters or fewer.');
       return false;
     }
     return true;
@@ -174,13 +170,12 @@ const FuelEntryCreatePage: React.FC = () => {
         vehicleId: form.vehicleId,
         date: form.date,
         odometerReadingKm: Number(form.odometerReadingKm),
-        liters: Number(form.liters),
+        kwhUsed: Number(form.kwhUsed),
         cost: Number(form.cost),
-        fuelStationName: form.fuelStationName.trim(),
-        receiptImagePath: form.receiptImagePath ? form.receiptImagePath.trim() : null,
+        chargingLocation: form.chargingLocation.trim(),
       };
 
-      const response = await axios.post(`${apiBaseUrl}/api/fuelentries`, payload, {
+      const response = await axios.post(`${apiBaseUrl}/api/chargingentries`, payload, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -188,27 +183,25 @@ const FuelEntryCreatePage: React.FC = () => {
       });
 
       if (response.status === 201) {
-        setSuccess('Fuel entry recorded successfully.');
+        setSuccess('Charging entry recorded successfully.');
         setForm({
           vehicleId: '',
           date: '',
           odometerReadingKm: '',
-          liters: '',
+          kwhUsed: '',
           cost: '',
-          fuelStationName: '',
-          receiptImagePath: '',
+          chargingLocation: '',
         });
       } else {
-        setError('Failed to create fuel entry. Please try again.');
+        setError('Failed to create charging entry. Please try again.');
       }
     } catch (err: any) {
-      console.error('Fuel entry creation error', err);
+      console.error('Charging entry creation error', err);
 
       const data = err?.response?.data;
       const backendDetail = data?.detail as string | undefined;
       const backendError = data?.error as string | undefined;
       const backendTitle = data?.title as string | undefined;
-
       const errors = data?.errors as Record<string, string[]> | undefined;
       let validationMessage: string | undefined;
       if (errors) {
@@ -224,7 +217,7 @@ const FuelEntryCreatePage: React.FC = () => {
       }
 
       setError(
-        validationMessage || backendDetail || backendError || backendTitle || 'Failed to create fuel entry.'
+        validationMessage || backendDetail || backendError || backendTitle || 'Failed to create charging entry.'
       );
     } finally {
       setLoading(false);
@@ -251,9 +244,9 @@ const FuelEntryCreatePage: React.FC = () => {
           </button>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">Add Fuel Entry</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center">Add Charging Entry</h1>
         <p className="text-gray-600 mb-6 text-center text-sm sm:text-base">
-          Track refueling details for your selected vehicle. Fields marked with * are required.
+          Record charging sessions for your electric vehicles. Fields marked with * are required.
         </p>
 
         {(loadingSettings || loadingVehicles) && (
@@ -294,7 +287,7 @@ const FuelEntryCreatePage: React.FC = () => {
             </select>
             {vehicles.length === 0 && !loadingVehicles && (
               <p className="mt-1 text-xs text-gray-500">
-                No vehicles available. Add a vehicle first so you can log fuel entries.
+                No vehicles available. Add a vehicle first so you can log charging entries.
               </p>
             )}
             {vehicleWarning && (
@@ -337,19 +330,19 @@ const FuelEntryCreatePage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="liters" className="block text-sm font-medium text-gray-700 mb-1">
-                Liters *
+              <label htmlFor="kwhUsed" className="block text-sm font-medium text-gray-700 mb-1">
+                kWh Used *
               </label>
               <input
-                id="liters"
-                name="liters"
+                id="kwhUsed"
+                name="kwhUsed"
                 type="number"
                 min="0"
                 step="0.01"
-                value={form.liters}
+                value={form.kwhUsed}
                 onChange={handleChange}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="e.g. 45.5"
+                placeholder="e.g. 35.2"
               />
             </div>
 
@@ -366,41 +359,24 @@ const FuelEntryCreatePage: React.FC = () => {
                 value={form.cost}
                 onChange={handleChange}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="e.g. 120.75"
+                placeholder="e.g. 18.75"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="fuelStationName" className="block text-sm font-medium text-gray-700 mb-1">
-                Fuel Station
-              </label>
-              <input
-                id="fuelStationName"
-                name="fuelStationName"
-                type="text"
-                value={form.fuelStationName}
-                onChange={handleChange}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Station or location name"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="receiptImagePath" className="block text-sm font-medium text-gray-700 mb-1">
-                Receipt Image URL
-              </label>
-              <input
-                id="receiptImagePath"
-                name="receiptImagePath"
-                type="text"
-                value={form.receiptImagePath}
-                onChange={handleChange}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Optional receipt link"
-              />
-            </div>
+          <div>
+            <label htmlFor="chargingLocation" className="block text-sm font-medium text-gray-700 mb-1">
+              Charging Location
+            </label>
+            <input
+              id="chargingLocation"
+              name="chargingLocation"
+              type="text"
+              value={form.chargingLocation}
+              onChange={handleChange}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="Charging station name"
+            />
           </div>
 
           <div className="flex items-center justify-between mt-6">
@@ -416,7 +392,7 @@ const FuelEntryCreatePage: React.FC = () => {
               disabled={loading}
               className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save Fuel Entry'}
+              {loading ? 'Saving...' : 'Save Charging Entry'}
             </button>
           </div>
         </form>
@@ -425,4 +401,4 @@ const FuelEntryCreatePage: React.FC = () => {
   );
 };
 
-export default FuelEntryCreatePage;
+export default ChargingEntryCreatePage;

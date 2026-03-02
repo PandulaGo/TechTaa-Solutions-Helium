@@ -4,6 +4,7 @@ public class FuelEntryDto
 {
     public Guid Id { get; set; }
     public Guid VehicleId { get; set; }
+    public string? VehicleVin { get; set; }
     public DateOnly Date { get; set; }
     public int OdometerReadingKm { get; set; }
     public decimal Liters { get; set; }

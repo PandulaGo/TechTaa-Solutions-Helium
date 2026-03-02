@@ -19,7 +19,7 @@ public class FuelEntriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResult<FuelEntryDto>>> GetEntries([FromQuery] Guid vehicleId, [FromQuery] PaginationQuery query, CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<FuelEntryDto>>> GetEntries([FromQuery] Guid? vehicleId, [FromQuery] PaginationQuery query, CancellationToken cancellationToken)
     {
         var result = await _fuelEntryService.GetPagedAsync(vehicleId, query, cancellationToken);
         return Ok(result);

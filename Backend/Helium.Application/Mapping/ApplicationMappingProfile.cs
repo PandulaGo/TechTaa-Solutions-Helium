@@ -18,16 +18,22 @@ public class ApplicationMappingProfile : Profile
         CreateMap<VehicleCreateDto, Vehicle>();
         CreateMap<VehicleUpdateDto, Vehicle>();
 
-        CreateMap<FuelEntry, FuelEntryDto>().ReverseMap();
+        CreateMap<FuelEntry, FuelEntryDto>()
+            .ForMember(dest => dest.VehicleVin, opt => opt.MapFrom(src => src.Vehicle != null ? src.Vehicle.Vin : null))
+            .ReverseMap();
         CreateMap<FuelEntryCreateDto, FuelEntry>();
         CreateMap<FuelEntryUpdateDto, FuelEntry>();
 
-        CreateMap<ChargingEntry, ChargingEntryDto>().ReverseMap();
+        CreateMap<ChargingEntry, ChargingEntryDto>()
+            .ForMember(dest => dest.VehicleVin, opt => opt.MapFrom(src => src.Vehicle != null ? src.Vehicle.Vin : null))
+            .ReverseMap();
         CreateMap<ChargingEntryCreateDto, ChargingEntry>();
         CreateMap<ChargingEntryUpdateDto, ChargingEntry>();
 
         CreateMap<MaintenanceReminder, MaintenanceReminderDto>().ReverseMap();
-        CreateMap<MaintenanceRecord, MaintenanceRecordDto>().ReverseMap();
+        CreateMap<MaintenanceRecord, MaintenanceRecordDto>()
+            .ForMember(dest => dest.VehicleVin, opt => opt.MapFrom(src => src.Vehicle != null ? src.Vehicle.Vin : null))
+            .ReverseMap();
         CreateMap<MaintenanceRecordCreateDto, MaintenanceRecord>();
         CreateMap<MaintenanceRecordUpdateDto, MaintenanceRecord>();
     }

@@ -1,4 +1,5 @@
 using AutoMapper;
+using System.Collections.Generic;
 using Helium.Application.Common.Extensions;
 using Helium.Application.Common.Models;
 using Helium.Application.Interfaces.Persistence;
@@ -42,18 +43,62 @@ public class MaintenanceService : IMaintenanceService
         return entity is null ? null : _mapper.Map<MaintenanceRecordDto>(entity);
     }
 
-    public async Task<PagedResult<MaintenanceRecordDto>> GetPagedAsync(Guid vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<MaintenanceRecordDto>> GetPagedAsync(Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
     {
         var recordQuery = _unitOfWork.Repository<MaintenanceRecord>()
-            .Query()
-            .Where(r => r.VehicleId == vehicleId);
+            .Query();
+
+        if (vehicleId.HasValue && vehicleId.Value != Guid.Empty)
+        {
+            var id = vehicleId.Value;
+            recordQuery = recordQuery.Where(r => r.VehicleId == id);
+        }
 
         recordQuery = ApplySorting(recordQuery, query);
         var paged = recordQuery.ToPagedResult(query);
 
+        var recordIds = paged.Items.Select(r => r.Id).ToList();
+        var reminderLookup = new Dictionary<Guid, MaintenanceReminderDto>();
+        var vehicleLookup = new Dictionary<Guid, string?>();
+
+        if (recordIds.Count > 0)
+        {
+            var reminders = _unitOfWork.Repository<MaintenanceReminder>().Query()
+                .Where(r => recordIds.Contains(r.MaintenanceRecordId))
+                .ToList();
+
+            reminderLookup = reminders.ToDictionary(r => r.MaintenanceRecordId, r => _mapper.Map<MaintenanceReminderDto>(r));
+        }
+
+        var vehicleIds = paged.Items.Select(r => r.VehicleId).Distinct().ToList();
+        if (vehicleIds.Count > 0)
+        {
+            vehicleLookup = _unitOfWork.Repository<Vehicle>().Query()
+                .Where(v => vehicleIds.Contains(v.Id))
+                .Select(v => new { v.Id, v.Vin })
+                .ToDictionary(v => v.Id, v => v.Vin);
+        }
+
+        var dtoItems = paged.Items
+            .Select(record =>
+            {
+                var dto = _mapper.Map<MaintenanceRecordDto>(record);
+                if (reminderLookup.TryGetValue(record.Id, out var reminderDto))
+                {
+                    dto.Reminder = reminderDto;
+                }
+                if (vehicleLookup.TryGetValue(record.VehicleId, out var vin))
+                {
+                    dto.VehicleVin = vin;
+                }
+
+                return dto;
+            })
+            .ToList();
+
         return await Task.FromResult(new PagedResult<MaintenanceRecordDto>
         {
-            Items = paged.Items.Select(_mapper.Map<MaintenanceRecordDto>).ToList(),
+            Items = dtoItems,
             Page = paged.Page,
             PageSize = paged.PageSize,
             TotalCount = paged.TotalCount
@@ -75,6 +120,10 @@ public class MaintenanceService : IMaintenanceService
         if (dto.Reminder is not null)
         {
             entity.Reminder = CreateOrUpdateReminder(entity.Reminder, dto.Reminder, entity);
+        }
+        else if (entity.Reminder is not null)
+        {
+            entity.Reminder = null;
         }
 
         repo.Update(entity);
