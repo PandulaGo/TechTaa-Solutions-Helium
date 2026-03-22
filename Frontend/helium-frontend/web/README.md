@@ -1,20 +1,37 @@
 # Helium Frontend Web Application
 
-This is the web frontend for the Helium application, built using React and styled with Tailwind CSS.
+This is the web frontend for the Helium application, built using **React**, **TypeScript**, and styled with **Tailwind CSS**.
+
+## Architecture Overview
+
+```mermaid
+graph TD
+    Browser["User Browser"] --> Web["Helium Web App (React)"]
+    Web --> AppSettings["public/appsettings.json"]
+    Web --> Api["Helium.Api (ASP.NET Core)"]
+
+    Api --> Auth["/api/auth/*"]
+    Api --> Vehicles["/api/vehicles/*"]
+    Api --> Fuel["/api/fuel-entries/*"]
+    Api --> Charging["/api/charging-entries/*"]
+    Api --> Maintenance["/api/maintenance-records/*"]
+    Api --> Reports["/api/reports/*"]
+```
 
 ## Project Structure
 
-- `src/`: Contains the source code for the React application.
+- `src/`: Source code for the React application.
   - `index.tsx`: Entry point for the React application and backend health check.
-  - `App.tsx`: Main application component that sets up routing (home, login, signup).
-  - `pages/`: Contains the different pages of the application.
+  - `App.tsx`: Main application component that sets up routing (home, login, signup, etc.).
+  - `pages/`: Page components for the application.
     - `HomePage.tsx`: Simple home page.
     - `LoginPage.tsx`: Login page that posts to `/api/auth/login`.
-    - `SignupPage.tsx`: Registration page that posts to `/api/auth/register`.
+    - `SignupPage.tsx`: Registration page that posts to `/api/auth/register` and enforces password rules.
+  - `components/`: Shared UI components used across pages.
   - `index.css`: Global CSS styles, including Tailwind CSS directives.
 
-- `public/`: Contains static files.
-  - `index.html`: The main HTML file for the React application.
+- `public/`: Static files.
+  - `index.html`: Main HTML file for the React application.
   - `appsettings.json`: Frontend configuration file containing `apiBaseUrl` for the backend.
 
 ## Getting Started

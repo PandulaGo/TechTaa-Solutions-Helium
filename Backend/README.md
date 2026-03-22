@@ -1,53 +1,80 @@
 # Helium App Backend
 
 ## Summary (What’s been built so far)
-- Created Clean Architecture solution: **Helium Solution**
-- Added projects and references:
-  - **Helium.Domain**
-  - **Helium.Application** (references Domain)
-  - **Helium.Infrastructure** (references Application)
-  - **Helium.Api** (references Application + Infrastructure)
-- Removed default WeatherForecast sample and wired controllers.
+- Clean Architecture backend for the Helium application.
+- Projects and references:
+  - **Helium.Domain** (core entities and enums)
+  - **Helium.Application** (DTOs, services, validators, mapping) – references Domain
+  - **Helium.Infrastructure** (EF Core, security, storage, notifications) – references Application & Domain
+  - **Helium.Api** (ASP.NET Core Web API) – references Application & Infrastructure
+- Removed default WeatherForecast sample and wired all feature controllers.
 - Implemented core domain entities and relationships.
 - Added DTOs, services, validators, and AutoMapper profiles.
-- Implemented EF Core DbContext, JWT auth, storage, and notifications placeholders.
+- Implemented EF Core `AppDbContext`, JWT auth, local file storage, and notification service placeholder.
 - Added global exception handling middleware.
-- Added Serilog logging.
-- Added a maintenance reminder background service.
-- Added REST controllers for auth, vehicles, entries, maintenance, reports, and file upload.
+- Added Serilog request logging.
+- Added a maintenance reminder background service with automatic migration on startup.
+- Added REST controllers for auth, vehicles, fuel/charging entries, maintenance, reports, and file upload.
 
-## Solution Structure
+## High-Level Architecture
+
+```mermaid
+graph TD
+    ClientWeb[Web Frontend (React)] --> Api[Helium.Api (ASP.NET Core)]
+    ClientMobile[Mobile App (Flutter)] --> Api
+
+    Api --> AppLayer[Helium.Application<br/>Services, DTOs, Validation]
+    AppLayer --> Domain[Helium.Domain<br/>Entities, Enums]
+    AppLayer --> Infra[Helium.Infrastructure<br/>EF Core, Security, Storage, Notifications]
+
+    Infra --> Db[(SQL Server Database)]
+    Infra --> Files[(File Storage: receipts)]
+
+    Api -.Background Jobs.- Bg[MaintenanceReminderBackgroundService]
+    Bg --> Infra
+```
+
+## Solution Structure (Current)
+
 ```
 Backend
 ├─ Helium Solution.slnx
-└─ src
-   ├─ Api
-   │  └─ Helium.Api
-   │     ├─ BackgroundServices
-   │     ├─ Controllers
-   │     ├─ Middleware
-   │     ├─ Program.cs
-   │     └─ appsettings.json
-   ├─ Application
-   │  └─ Helium.Application
-   │     ├─ Common
-   │     ├─ Interfaces
-   │     ├─ Mapping
-   │     ├─ Models (DTOs)
-   │     ├─ Services
-   │     └─ Validation
-   ├─ Domain
-   │  └─ Helium.Domain
-   │     ├─ Common
-   │     ├─ Entities
-   │     └─ Enums
-   └─ Infrastructure
-      └─ Helium.Infrastructure
-         ├─ Notifications
-         ├─ Persistence
-         ├─ Security
-         ├─ Settings
-         └─ Storage
+├─ Helium.Api
+│  ├─ BackgroundServices
+│  │  └─ MaintenanceReminderBackgroundService.cs
+│  ├─ Controllers
+│  │  ├─ AuthController.cs
+│  │  ├─ VehiclesController.cs
+│  │  ├─ FuelEntriesController.cs
+│  │  ├─ ChargingEntriesController.cs
+│  │  ├─ MaintenanceRecordsController.cs
+│  │  ├─ ReportsController.cs
+│  │  └─ FilesController.cs
+│  ├─ Middleware
+│  │  └─ ExceptionHandlingMiddleware.cs
+│  ├─ Program.cs
+│  └─ appsettings.json
+├─ Helium.Application
+│  ├─ Common
+│  ├─ Interfaces
+│  ├─ Mapping
+│  ├─ Models (DTOs)
+│  ├─ Services
+│  └─ Validation
+├─ Helium.Domain
+│  ├─ Common
+│  │  └─ EntityBase.cs
+│  ├─ Entities
+│  └─ Enums
+└─ Helium.Infrastructure
+  ├─ Notifications
+  ├─ Persistence
+  │  ├─ AppDbContext.cs
+  │  ├─ Repositories
+  │  └─ Migrations
+  ├─ Security
+  ├─ Settings
+  └─ Storage
 ```
 
 ## Domain Layer

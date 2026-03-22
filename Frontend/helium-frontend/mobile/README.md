@@ -1,30 +1,36 @@
-# Mobile Application
+# Helium Mobile Application
 
-This directory contains the Flutter mobile application for the Helium project. The application is designed to run on both Android and iOS platforms.
+This directory contains the Flutter mobile application for the Helium project. The application is designed to run on both Android and iOS platforms and will communicate with the Helium backend via REST APIs as the app features are implemented.
 
-## Project Structure
+## Architecture Overview
 
-- **android/**: Contains Android-specific files for the Flutter application.
-- **ios/**: Contains iOS-specific files for the Flutter application.
-- **lib/**: Contains the main application code.
-  - **main.dart**: Entry point of the Flutter application.
-  - **src/**: Contains the source code organized into core, UI, and models.
-    - **core/**: Contains dependency management files.
-    - **ui/**: Contains UI components, screens, and widgets.
-    - **models/**: Contains data models used in the application.
-- **test/**: Contains widget tests for the application.
+```mermaid
+graph TD
+    User[Mobile User] --> App[Helium Mobile App (Flutter)]
+    App -->|Future integration| Api[Helium.Api (ASP.NET Core)]
+    Api --> BackendServices[Auth, Vehicles, Entries, Maintenance, Reports]
+```
+
+## Project Structure (Current)
+
+- **android/**: Android-specific files for the Flutter application.
+- **ios/**: iOS-specific files for the Flutter application.
 - **pubspec.yaml**: Configuration file for the Flutter project, listing dependencies and assets.
-- **analysis_options.yaml**: Contains analysis options for Dart code quality.
-- **README.md**: Documentation specific to the mobile application.
+- **analysis_options.yaml**: Analysis options for Dart code quality.
+- **test/**: Directory for Flutter widget/unit tests.
+
+As the mobile app is developed, the main application code (for example a `lib/` folder with `main.dart`, screens, and models) will be added here.
 
 ## Getting Started
 
-To run the mobile application, ensure you have Flutter installed on your machine. Follow these steps:
+To work with the mobile application, ensure you have Flutter installed on your machine, then:
 
 1. Clone the repository.
-2. Navigate to the `mobile` directory.
+2. Navigate to the `mobile` directory:
+   - `cd Frontend/helium-frontend/mobile`
 3. Run `flutter pub get` to install dependencies.
-4. Use `flutter run` to launch the application on an emulator or physical device.
+4. Add or update your Flutter source code (for example under a `lib/` folder).
+5. Use `flutter run` to launch the application on an emulator or physical device.
 
 ## Contributing
 
