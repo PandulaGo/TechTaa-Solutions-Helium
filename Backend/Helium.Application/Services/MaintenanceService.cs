@@ -1,5 +1,6 @@
 using AutoMapper;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using Helium.Application.Common.Extensions;
 using Helium.Application.Common.Models;
 using Helium.Application.Interfaces.Persistence;
@@ -39,7 +40,9 @@ public class MaintenanceService : IMaintenanceService
 
     public async Task<MaintenanceRecordDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await _unitOfWork.Repository<MaintenanceRecord>().GetByIdAsync(id, cancellationToken);
+        var entity = await _unitOfWork.Repository<MaintenanceRecord>().Query()
+            .Include(r => r.Reminder)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
         return entity is null ? null : _mapper.Map<MaintenanceRecordDto>(entity);
     }
 
