@@ -24,8 +24,15 @@ public class MaintenanceService : IMaintenanceService
 
     public async Task<MaintenanceRecordDto> CreateAsync(MaintenanceRecordCreateDto dto, CancellationToken cancellationToken = default)
     {
+        var vehicle = await _unitOfWork.Repository<Vehicle>().GetByIdAsync(dto.VehicleId, cancellationToken);
+        if (vehicle is null || vehicle.UserId != dto.UserId)
+        {
+            throw new UnauthorizedAccessException("You do not have access to this vehicle.");
+        }
+
         var entity = _mapper.Map<MaintenanceRecord>(dto);
         entity.Id = Guid.NewGuid();
+        entity.UserId = dto.UserId;
 
         if (dto.Reminder is not null)
         {
@@ -38,18 +45,19 @@ public class MaintenanceService : IMaintenanceService
         return _mapper.Map<MaintenanceRecordDto>(entity);
     }
 
-    public async Task<MaintenanceRecordDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<MaintenanceRecordDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await _unitOfWork.Repository<MaintenanceRecord>().Query()
             .Include(r => r.Reminder)
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId, cancellationToken);
         return entity is null ? null : _mapper.Map<MaintenanceRecordDto>(entity);
     }
 
-    public async Task<PagedResult<MaintenanceRecordDto>> GetPagedAsync(Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<MaintenanceRecordDto>> GetPagedAsync(Guid userId, Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
     {
         var recordQuery = _unitOfWork.Repository<MaintenanceRecord>()
-            .Query();
+            .Query()
+            .Where(r => r.UserId == userId);
 
         if (vehicleId.HasValue && vehicleId.Value != Guid.Empty)
         {
@@ -108,11 +116,11 @@ public class MaintenanceService : IMaintenanceService
         });
     }
 
-    public async Task UpdateAsync(Guid id, MaintenanceRecordUpdateDto dto, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Guid userId, Guid id, MaintenanceRecordUpdateDto dto, CancellationToken cancellationToken = default)
     {
         var repo = _unitOfWork.Repository<MaintenanceRecord>();
         var entity = await repo.GetByIdAsync(id, cancellationToken);
-        if (entity is null)
+        if (entity is null || entity.UserId != userId)
         {
             throw new KeyNotFoundException("Maintenance record not found.");
         }
@@ -133,11 +141,11 @@ public class MaintenanceService : IMaintenanceService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
     {
         var repo = _unitOfWork.Repository<MaintenanceRecord>();
         var entity = await repo.GetByIdAsync(id, cancellationToken);
-        if (entity is null)
+        if (entity is null || entity.UserId != userId)
         {
             return;
         }
@@ -146,12 +154,18 @@ public class MaintenanceService : IMaintenanceService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MaintenanceRecordDto>> GetDueRemindersAsync(DateOnly asOfDate, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<MaintenanceRecordDto>> GetDueRemindersAsync(Guid? userId, DateOnly asOfDate, CancellationToken cancellationToken = default)
     {
-        var records = _unitOfWork.Repository<MaintenanceRecord>().Query().Where(r => r.Reminder != null).ToList();
-        var fuelEntries = _unitOfWork.Repository<FuelEntry>().Query().ToList();
-        var chargingEntries = _unitOfWork.Repository<ChargingEntry>().Query().ToList();
-        var maintenanceRecords = _unitOfWork.Repository<MaintenanceRecord>().Query().ToList();
+        var query = _unitOfWork.Repository<MaintenanceRecord>().Query().Where(r => r.Reminder != null);
+        if (userId.HasValue)
+        {
+            query = query.Where(r => r.UserId == userId.Value);
+        }
+        var records = query.ToList();
+
+        var allFuelEntries = _unitOfWork.Repository<FuelEntry>().Query().ToList();
+        var allChargingEntries = _unitOfWork.Repository<ChargingEntry>().Query().ToList();
+        var allMaintenanceRecords = _unitOfWork.Repository<MaintenanceRecord>().Query().ToList();
 
         var due = new List<MaintenanceRecord>();
 
@@ -163,7 +177,7 @@ public class MaintenanceService : IMaintenanceService
                 continue;
             }
 
-            var latestOdometer = GetLatestOdometer(record.VehicleId, fuelEntries, chargingEntries, maintenanceRecords);
+            var latestOdometer = GetLatestOdometer(record.VehicleId, allFuelEntries, allChargingEntries, allMaintenanceRecords);
 
             var isDueByDate = reminder.IntervalType == ReminderIntervalType.Time &&
                               reminder.NextDueDate is not null &&

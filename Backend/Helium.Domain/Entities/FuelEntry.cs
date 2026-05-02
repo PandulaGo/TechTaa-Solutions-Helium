@@ -4,6 +4,7 @@ namespace Helium.Domain.Entities;
 
 public class FuelEntry : EntityBase
 {
+    public Guid UserId { get; set; }
     public Guid VehicleId { get; set; }
     public DateOnly Date { get; set; }
     public int OdometerReadingKm { get; set; }
@@ -13,4 +14,5 @@ public class FuelEntry : EntityBase
     public string? ReceiptImagePath { get; set; }
 
     public Vehicle? Vehicle { get; set; }
+    public User? User { get; set; }
 }

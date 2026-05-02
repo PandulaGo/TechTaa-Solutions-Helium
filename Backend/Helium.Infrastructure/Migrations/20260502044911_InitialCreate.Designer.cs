@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Helium.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260220155728_InitialCreate")]
+    [Migration("20260502044911_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -54,10 +54,15 @@ namespace Helium.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("VehicleId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("VehicleId");
 
@@ -96,10 +101,15 @@ namespace Helium.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("VehicleId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("VehicleId");
 
@@ -112,11 +122,22 @@ namespace Helium.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("GarageName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("MaintenanceType")
                         .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("MechanicName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
@@ -135,10 +156,18 @@ namespace Helium.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("VehicleId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("WorkStatus")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("VehicleId");
 
@@ -237,6 +266,9 @@ namespace Helium.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("BodyType")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -255,7 +287,7 @@ namespace Helium.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("Type")
+                    b.Property<int>("PowertrainType")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -280,33 +312,57 @@ namespace Helium.Infrastructure.Migrations
 
             modelBuilder.Entity("Helium.Domain.Entities.ChargingEntry", b =>
                 {
+                    b.HasOne("Helium.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Helium.Domain.Entities.Vehicle", "Vehicle")
                         .WithMany("ChargingEntries")
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("User");
+
                     b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("Helium.Domain.Entities.FuelEntry", b =>
                 {
+                    b.HasOne("Helium.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Helium.Domain.Entities.Vehicle", "Vehicle")
                         .WithMany("FuelEntries")
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("User");
+
                     b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("Helium.Domain.Entities.MaintenanceRecord", b =>
                 {
+                    b.HasOne("Helium.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Helium.Domain.Entities.Vehicle", "Vehicle")
                         .WithMany("MaintenanceRecords")
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
 
                     b.Navigation("Vehicle");
                 });

@@ -22,8 +22,15 @@ public class FuelEntryService : IFuelEntryService
 
     public async Task<FuelEntryDto> CreateAsync(FuelEntryCreateDto dto, CancellationToken cancellationToken = default)
     {
+        var vehicle = await _unitOfWork.Repository<Vehicle>().GetByIdAsync(dto.VehicleId, cancellationToken);
+        if (vehicle is null || vehicle.UserId != dto.UserId)
+        {
+            throw new UnauthorizedAccessException("You do not have access to this vehicle.");
+        }
+
         var entity = _mapper.Map<FuelEntry>(dto);
         entity.Id = Guid.NewGuid();
+        entity.UserId = dto.UserId;
 
         await _unitOfWork.Repository<FuelEntry>().AddAsync(entity, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -31,16 +38,22 @@ public class FuelEntryService : IFuelEntryService
         return _mapper.Map<FuelEntryDto>(entity);
     }
 
-    public async Task<FuelEntryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<FuelEntryDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await _unitOfWork.Repository<FuelEntry>().GetByIdAsync(id, cancellationToken);
-        return entity is null ? null : _mapper.Map<FuelEntryDto>(entity);
+        if (entity is null || entity.UserId != userId)
+        {
+            return null;
+        }
+
+        return _mapper.Map<FuelEntryDto>(entity);
     }
 
-    public async Task<PagedResult<FuelEntryDto>> GetPagedAsync(Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<FuelEntryDto>> GetPagedAsync(Guid userId, Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
     {
         var fuelQuery = _unitOfWork.Repository<FuelEntry>()
-            .Query();
+            .Query()
+            .Where(f => f.UserId == userId);
 
         if (vehicleId.HasValue && vehicleId.Value != Guid.Empty)
         {
@@ -81,11 +94,11 @@ public class FuelEntryService : IFuelEntryService
         });
     }
 
-    public async Task UpdateAsync(Guid id, FuelEntryUpdateDto dto, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Guid userId, Guid id, FuelEntryUpdateDto dto, CancellationToken cancellationToken = default)
     {
         var repo = _unitOfWork.Repository<FuelEntry>();
         var entity = await repo.GetByIdAsync(id, cancellationToken);
-        if (entity is null)
+        if (entity is null || entity.UserId != userId)
         {
             throw new KeyNotFoundException("Fuel entry not found.");
         }
@@ -97,11 +110,11 @@ public class FuelEntryService : IFuelEntryService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
     {
         var repo = _unitOfWork.Repository<FuelEntry>();
         var entity = await repo.GetByIdAsync(id, cancellationToken);
-        if (entity is null)
+        if (entity is null || entity.UserId != userId)
         {
             return;
         }

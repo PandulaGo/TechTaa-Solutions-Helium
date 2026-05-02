@@ -24,7 +24,7 @@ public class MaintenanceReminderBackgroundService : BackgroundService
                 var maintenanceService = scope.ServiceProvider.GetRequiredService<IMaintenanceService>();
                 var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
 
-                var dueRecords = await maintenanceService.GetDueRemindersAsync(DateOnly.FromDateTime(DateTime.UtcNow), stoppingToken);
+                var dueRecords = await maintenanceService.GetDueRemindersAsync(null, DateOnly.FromDateTime(DateTime.UtcNow), stoppingToken);
 
                 foreach (var record in dueRecords)
                 {

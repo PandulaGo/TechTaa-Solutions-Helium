@@ -47,18 +47,24 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(f => f.Id);
             entity.Property(f => f.FuelStationName).HasMaxLength(200);
+            entity.HasOne(f => f.User).WithMany().HasForeignKey(f => f.UserId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<ChargingEntry>(entity =>
         {
             entity.HasKey(c => c.Id);
             entity.Property(c => c.ChargingLocation).HasMaxLength(200);
+            entity.HasOne(c => c.User).WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<MaintenanceRecord>(entity =>
         {
             entity.HasKey(m => m.Id);
             entity.Property(m => m.MaintenanceType).IsRequired().HasMaxLength(200);
+            entity.Property(m => m.Cost).HasColumnType("decimal(18,2)");
+            entity.Property(m => m.GarageName).HasMaxLength(200);
+            entity.Property(m => m.MechanicName).HasMaxLength(200);
+            entity.HasOne(m => m.User).WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.NoAction);
             entity.HasOne(m => m.Reminder)
                 .WithOne(r => r.MaintenanceRecord)
                 .HasForeignKey<MaintenanceReminder>(r => r.MaintenanceRecordId)

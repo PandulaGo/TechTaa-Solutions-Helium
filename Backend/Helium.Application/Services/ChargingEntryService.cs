@@ -22,8 +22,15 @@ public class ChargingEntryService : IChargingEntryService
 
     public async Task<ChargingEntryDto> CreateAsync(ChargingEntryCreateDto dto, CancellationToken cancellationToken = default)
     {
+        var vehicle = await _unitOfWork.Repository<Vehicle>().GetByIdAsync(dto.VehicleId, cancellationToken);
+        if (vehicle is null || vehicle.UserId != dto.UserId)
+        {
+            throw new UnauthorizedAccessException("You do not have access to this vehicle.");
+        }
+
         var entity = _mapper.Map<ChargingEntry>(dto);
         entity.Id = Guid.NewGuid();
+        entity.UserId = dto.UserId;
 
         await _unitOfWork.Repository<ChargingEntry>().AddAsync(entity, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -31,16 +38,22 @@ public class ChargingEntryService : IChargingEntryService
         return _mapper.Map<ChargingEntryDto>(entity);
     }
 
-    public async Task<ChargingEntryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ChargingEntryDto?> GetByIdAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await _unitOfWork.Repository<ChargingEntry>().GetByIdAsync(id, cancellationToken);
-        return entity is null ? null : _mapper.Map<ChargingEntryDto>(entity);
+        if (entity is null || entity.UserId != userId)
+        {
+            return null;
+        }
+
+        return _mapper.Map<ChargingEntryDto>(entity);
     }
 
-    public async Task<PagedResult<ChargingEntryDto>> GetPagedAsync(Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ChargingEntryDto>> GetPagedAsync(Guid userId, Guid? vehicleId, PaginationQuery query, CancellationToken cancellationToken = default)
     {
         var chargingQuery = _unitOfWork.Repository<ChargingEntry>()
-            .Query();
+            .Query()
+            .Where(c => c.UserId == userId);
 
         if (vehicleId.HasValue && vehicleId.Value != Guid.Empty)
         {
@@ -81,11 +94,11 @@ public class ChargingEntryService : IChargingEntryService
         });
     }
 
-    public async Task UpdateAsync(Guid id, ChargingEntryUpdateDto dto, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Guid userId, Guid id, ChargingEntryUpdateDto dto, CancellationToken cancellationToken = default)
     {
         var repo = _unitOfWork.Repository<ChargingEntry>();
         var entity = await repo.GetByIdAsync(id, cancellationToken);
-        if (entity is null)
+        if (entity is null || entity.UserId != userId)
         {
             throw new KeyNotFoundException("Charging entry not found.");
         }
@@ -97,11 +110,11 @@ public class ChargingEntryService : IChargingEntryService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
     {
         var repo = _unitOfWork.Repository<ChargingEntry>();
         var entity = await repo.GetByIdAsync(id, cancellationToken);
-        if (entity is null)
+        if (entity is null || entity.UserId != userId)
         {
             return;
         }

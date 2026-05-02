@@ -1,3 +1,5 @@
+using Helium.Domain.Enums;
+
 namespace Helium.Application.Models.Maintenance;
 
 public class MaintenanceRecordDto
@@ -10,5 +12,9 @@ public class MaintenanceRecordDto
     public DateOnly ServiceDate { get; set; }
     public string? Notes { get; set; }
     public string? ReceiptImagePath { get; set; }
+    public decimal Cost { get; set; }
+    public string? GarageName { get; set; }
+    public string? MechanicName { get; set; }
+    public WorkStatus WorkStatus { get; set; }
     public MaintenanceReminderDto? Reminder { get; set; }
 }

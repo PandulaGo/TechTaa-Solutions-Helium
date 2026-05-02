@@ -40,7 +40,8 @@ namespace Helium.Infrastructure.Migrations
                     Make = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Year = table.Column<int>(type: "int", nullable: true),
-                    Type = table.Column<int>(type: "int", nullable: false),
+                    PowertrainType = table.Column<int>(type: "int", nullable: false),
+                    BodyType = table.Column<int>(type: "int", nullable: false),
                     Vin = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
@@ -61,6 +62,7 @@ namespace Helium.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VehicleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     OdometerReadingKm = table.Column<int>(type: "int", nullable: false),
@@ -74,6 +76,11 @@ namespace Helium.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_ChargingEntries", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_ChargingEntries_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_ChargingEntries_Vehicles_VehicleId",
                         column: x => x.VehicleId,
                         principalTable: "Vehicles",
@@ -86,6 +93,7 @@ namespace Helium.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VehicleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     OdometerReadingKm = table.Column<int>(type: "int", nullable: false),
@@ -100,6 +108,11 @@ namespace Helium.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_FuelEntries", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_FuelEntries_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_FuelEntries_Vehicles_VehicleId",
                         column: x => x.VehicleId,
                         principalTable: "Vehicles",
@@ -112,18 +125,28 @@ namespace Helium.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     VehicleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MaintenanceType = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     OdometerReadingKm = table.Column<int>(type: "int", nullable: false),
                     ServiceDate = table.Column<DateOnly>(type: "date", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ReceiptImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Cost = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    GarageName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    MechanicName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    WorkStatus = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MaintenanceRecords", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceRecords_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_MaintenanceRecords_Vehicles_VehicleId",
                         column: x => x.VehicleId,
@@ -158,14 +181,29 @@ namespace Helium.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChargingEntries_UserId",
+                table: "ChargingEntries",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ChargingEntries_VehicleId",
                 table: "ChargingEntries",
                 column: "VehicleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FuelEntries_UserId",
+                table: "FuelEntries",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FuelEntries_VehicleId",
                 table: "FuelEntries",
                 column: "VehicleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceRecords_UserId",
+                table: "MaintenanceRecords",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MaintenanceRecords_VehicleId",

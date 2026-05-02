@@ -22,6 +22,10 @@ interface MaintenanceRecordDto {
   odometerReadingKm: number;
   notes?: string | null;
   receiptImagePath?: string | null;
+  cost: number;
+  garageName?: string | null;
+  mechanicName?: string | null;
+  workStatus: number;
   reminder?: MaintenanceReminderDto | null;
 }
 
@@ -174,6 +178,27 @@ const MaintenanceEntriesPage: React.FC = () => {
     return entries.filter((entry) => getStatusBucket(entry) === statusFilter);
   }, [entries, statusFilter]);
 
+  const odometerGroupCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    for (const entry of entries) {
+      counts[entry.odometerReadingKm] = (counts[entry.odometerReadingKm] || 0) + 1;
+    }
+    return counts;
+  }, [entries]);
+
+  const getWorkStatusLabel = (status: number): { label: string; color: string } => {
+    switch (status) {
+      case 0:
+        return { label: 'Scheduled', color: 'bg-blue-50 text-blue-700' };
+      case 1:
+        return { label: 'In Progress', color: 'bg-yellow-50 text-yellow-800' };
+      case 2:
+        return { label: 'Completed', color: 'bg-green-50 text-green-700' };
+      default:
+        return { label: 'Unknown', color: 'bg-gray-100 text-gray-600' };
+    }
+  };
+
   const statusBadge = (record: MaintenanceRecordDto) => {
     const status = getStatusBucket(record);
     if (status === 'due') {
@@ -182,7 +207,7 @@ const MaintenanceEntriesPage: React.FC = () => {
     if (status === 'upcoming') {
       return <span className="inline-flex items-center rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Upcoming</span>;
     }
-    return <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Logged</span>;
+    return <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Completed</span>;
   };
 
   const renderNextDue = (record: MaintenanceRecordDto) => {
@@ -247,7 +272,7 @@ const MaintenanceEntriesPage: React.FC = () => {
                 { label: 'All', value: 'all' as StatusBucket },
                 { label: 'Upcoming', value: 'upcoming' as StatusBucket },
                 { label: 'Due now', value: 'due' as StatusBucket },
-                { label: 'History', value: 'history' as StatusBucket },
+                { label: 'Completed', value: 'history' as StatusBucket },
               ].map((option) => (
                 <button
                   key={option.value}
@@ -274,27 +299,31 @@ const MaintenanceEntriesPage: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Date</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Odometer</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Status</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Due</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reminder</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loadingEntries ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500">
                     Loading maintenance records...
                   </td>
                 </tr>
               ) : filteredEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500">
                     No maintenance records recorded yet.
                   </td>
                 </tr>
               ) : (
-                filteredEntries.map((record) => (
+                filteredEntries.map((record) => {
+                  const groupCount = odometerGroupCounts[record.odometerReadingKm] || 1;
+                  const wstatus = getWorkStatusLabel(record.workStatus);
+                  return (
                   <tr key={record.id}>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700">
@@ -304,13 +333,28 @@ const MaintenanceEntriesPage: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{record.serviceDate}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{record.maintenanceType}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      {record.odometerReadingKm.toLocaleString()} km
+                      <div className="inline-flex items-center gap-1">
+                        {record.odometerReadingKm.toLocaleString()} km
+                        {groupCount > 1 && (
+                          <span
+                            className="inline-flex items-center rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 cursor-default"
+                            title={`${groupCount} services at ${record.odometerReadingKm.toLocaleString()} km`}
+                          >
+                            &times;{groupCount}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                      {record.cost > 0 ? `$${record.cost.toFixed(2)}` : '—'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${wstatus.color}`}>
+                        {wstatus.label}
+                      </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{renderNextDue(record)}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">{statusBadge(record)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 max-w-xs">
-                      {record.notes || '—'}
-                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
                       <div className="inline-flex items-center gap-2">
                         {record.receiptImagePath && (
@@ -340,7 +384,8 @@ const MaintenanceEntriesPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

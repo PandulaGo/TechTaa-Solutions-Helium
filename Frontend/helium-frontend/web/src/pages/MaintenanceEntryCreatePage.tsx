@@ -43,6 +43,10 @@ const MaintenanceEntryCreatePage: React.FC = () => {
     odometerReadingKm: '',
     notes: '',
     receiptImagePath: '',
+    cost: '',
+    garageName: '',
+    mechanicName: '',
+    workStatus: '0',
     reminderEnabled: false,
     reminderIntervalType: 'mileage' as ReminderIntervalType,
     reminderIntervalValue: '',
@@ -179,6 +183,10 @@ const MaintenanceEntryCreatePage: React.FC = () => {
         odometerReadingKm: Number(form.odometerReadingKm),
         notes: form.notes.trim() ? form.notes.trim() : null,
         receiptImagePath: form.receiptImagePath.trim() ? form.receiptImagePath.trim() : null,
+        cost: Number(form.cost) || 0,
+        garageName: form.garageName.trim() || null,
+        mechanicName: form.mechanicName.trim() || null,
+        workStatus: Number(form.workStatus),
         reminder: buildReminderPayload(),
       };
 
@@ -198,7 +206,10 @@ const MaintenanceEntryCreatePage: React.FC = () => {
           odometerReadingKm: '',
           notes: '',
           receiptImagePath: '',
-          reminderEnabled: false,
+          cost: '',
+          garageName: '',
+          mechanicName: '',
+          workStatus: '0',          reminderEnabled: false,
           reminderIntervalType: 'mileage',
           reminderIntervalValue: '',
         });
@@ -376,6 +387,77 @@ const MaintenanceEntryCreatePage: React.FC = () => {
               className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               placeholder="Add any technician notes or upcoming needs"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-1">
+                Cost
+              </label>
+              <div className="relative rounded-md shadow-sm">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <input
+                  id="cost"
+                  name="cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.cost}
+                  onChange={handleChange}
+                  className="block w-full rounded-md border border-gray-300 pl-7 pr-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="garageName" className="block text-sm font-medium text-gray-700 mb-1">
+                Garage Name
+              </label>
+              <input
+                id="garageName"
+                name="garageName"
+                type="text"
+                value={form.garageName}
+                onChange={handleChange}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="e.g. Speedy Auto"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="mechanicName" className="block text-sm font-medium text-gray-700 mb-1">
+                Mechanic Name
+              </label>
+              <input
+                id="mechanicName"
+                name="mechanicName"
+                type="text"
+                value={form.mechanicName}
+                onChange={handleChange}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="e.g. John Smith"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="workStatus" className="block text-sm font-medium text-gray-700 mb-1">
+              Work Status
+            </label>
+            <select
+              id="workStatus"
+              name="workStatus"
+              value={form.workStatus}
+              onChange={handleChange}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm bg-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="0">Scheduled</option>
+              <option value="1">In Progress</option>
+              <option value="2">Completed</option>
+            </select>
           </div>
 
           <div className="border border-gray-200 rounded-lg p-4">

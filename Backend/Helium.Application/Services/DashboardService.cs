@@ -34,13 +34,15 @@ public class DashboardService : IDashboardService
         var evVehicleIds = evVehicles.Select(v => v.Id).ToList();
 
         var fuelEntries = _unitOfWork.Repository<FuelEntry>().Query()
-            .Where(entry => iceVehicleIds.Contains(entry.VehicleId)
+            .Where(entry => entry.UserId == userId
+                            && iceVehicleIds.Contains(entry.VehicleId)
                             && entry.Date >= monthStart
                             && entry.Date <= monthEnd)
             .ToList();
 
         var chargingEntries = _unitOfWork.Repository<ChargingEntry>().Query()
-            .Where(entry => evVehicleIds.Contains(entry.VehicleId)
+            .Where(entry => entry.UserId == userId
+                            && evVehicleIds.Contains(entry.VehicleId)
                             && entry.Date >= monthStart
                             && entry.Date <= monthEnd)
             .ToList();
@@ -79,22 +81,16 @@ public class DashboardService : IDashboardService
         var yearEnd = new DateOnly(boundedYear, 12, 31);
 
         var fuelEntriesQuery = _unitOfWork.Repository<FuelEntry>().Query()
-            .Where(entry => entry.Date >= yearStart && entry.Date <= yearEnd);
-
-        if (vehicleIds.Count > 0)
-        {
-            fuelEntriesQuery = fuelEntriesQuery.Where(entry => vehicleIds.Contains(entry.VehicleId));
-        }
+            .Where(entry => entry.UserId == userId
+                            && entry.Date >= yearStart
+                            && entry.Date <= yearEnd);
 
         var fuelEntries = fuelEntriesQuery.ToList();
 
         var chargingEntriesQuery = _unitOfWork.Repository<ChargingEntry>().Query()
-            .Where(entry => entry.Date >= yearStart && entry.Date <= yearEnd);
-
-        if (vehicleIds.Count > 0)
-        {
-            chargingEntriesQuery = chargingEntriesQuery.Where(entry => vehicleIds.Contains(entry.VehicleId));
-        }
+            .Where(entry => entry.UserId == userId
+                            && entry.Date >= yearStart
+                            && entry.Date <= yearEnd);
 
         var chargingEntries = chargingEntriesQuery.ToList();
 
