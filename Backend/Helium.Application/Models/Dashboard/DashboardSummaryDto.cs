@@ -21,4 +21,5 @@ public class MaintenanceSummaryDto
 {
     public int DueThisMonth { get; set; }
     public int RemainingThisMonth { get; set; }
+    public decimal TotalCost { get; set; }
 }

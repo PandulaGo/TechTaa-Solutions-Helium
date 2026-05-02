@@ -6,9 +6,43 @@ interface AppSettings {
   apiBaseUrl: string;
 }
 
+interface DateOnly {
+  year: number;
+  month: number;
+  day: number;
+}
+
+interface UserDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  preferredCurrency: string;
+}
+
 interface VehicleDto {
   id: string;
   name: string;
+}
+
+interface VehicleSummaryDto {
+  id: string;
+  name: string;
+  powertrainType: string;
+  currentOdometerKm: number;
+  monthlyCost: number;
+  nextMaintenanceType?: string | null;
+  nextMaintenanceDue?: string | null;
+  workStatus: number;
+}
+
+interface RecentActivityDto {
+  id: string;
+  activityType: string;
+  vehicleName: string;
+  description: string;
+  cost: number;
+  activityDate: string;
 }
 
 interface MaintenanceReminderDto {
@@ -41,6 +75,7 @@ interface FuelSummary {
 interface MaintenanceSummary {
   dueThisMonth: number;
   remainingThisMonth: number;
+  totalCost: number;
 }
 
 interface DashboardSummary {
@@ -57,15 +92,18 @@ interface EnergyTrendPoint {
   chargingCost: number;
   fuelVolumeLiters: number;
   energyConsumedKwh: number;
+  maintenanceCost: number;
   totalCost: number;
   totalUsage: number;
+  grandTotalCost: number;
 }
 
 const DashboardPage: React.FC = () => {
   const history = useHistory();
-  const [isFabOpen, setIsFabOpen] = useState(false);
   const [apiBaseUrl, setApiBaseUrl] = useState<string | null>(null);
+  const [user, setUser] = useState<UserDto | null>(null);
   const [vehicles, setVehicles] = useState<VehicleDto[]>([]);
+  const [vehicleSummaries, setVehicleSummaries] = useState<VehicleSummaryDto[]>([]);
   const [dueReminders, setDueReminders] = useState<MaintenanceRecordDto[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -75,30 +113,35 @@ const DashboardPage: React.FC = () => {
   const [energyTrend, setEnergyTrend] = useState<EnergyTrendPoint[]>([]);
   const [trendLoading, setTrendLoading] = useState(false);
   const [trendError, setTrendError] = useState<string | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivityDto[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<DateOnly | null>(null);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [chartHoveredMonth, setChartHoveredMonth] = useState<number | null>(null);
+
+  const currency = user?.preferredCurrency || 'USD';
 
   const currencyFormatter = useMemo(
     () =>
       new Intl.NumberFormat(undefined, {
         style: 'currency',
-        currency: 'USD',
+        currency: currency,
         maximumFractionDigits: 0,
       }),
-    []
+    [currency]
   );
 
   const monthLabel = useMemo(() => {
-    return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date());
-  }, []);
-
-  const currentYear = useMemo(() => new Date().getFullYear(), []);
+    const d = selectedMonth
+      ? new Date(selectedMonth.year, selectedMonth.month - 1, 1)
+      : new Date();
+    return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(d);
+  }, [selectedMonth]);
 
   const formatCurrency = (value: number) => currencyFormatter.format(value);
   const formatNumber = (value: number) => value.toLocaleString();
-  const formatQuantity = (value: number, unit: string) =>
-    `${value.toLocaleString(undefined, {
-      maximumFractionDigits: 1,
-      minimumFractionDigits: value > 0 && value < 10 ? 1 : 0,
-    })} ${unit}`;
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -114,6 +157,29 @@ const DashboardPage: React.FC = () => {
 
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      if (!apiBaseUrl) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get<UserDto>(`${apiBaseUrl}/api/users/me`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        setUser(response.data);
+      } catch (err) {
+        console.error('Failed to load user profile', err);
+      }
+    };
+
+    if (apiBaseUrl) {
+      loadUser();
+    }
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     const loadVehicles = async () => {
@@ -156,11 +222,16 @@ const DashboardPage: React.FC = () => {
 
       try {
         const token = localStorage.getItem('token');
+        const params: Record<string, any> = {};
+        if (selectedMonth) {
+          params.month = `${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}-01`;
+        }
         const response = await axios.get<DashboardSummary>(`${apiBaseUrl}/api/dashboard/summary`, {
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
+          params,
         });
 
         setSummary(response.data);
@@ -176,7 +247,7 @@ const DashboardPage: React.FC = () => {
     if (apiBaseUrl) {
       loadSummary();
     }
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, selectedMonth]);
 
   useEffect(() => {
     const loadEnergyTrend = async () => {
@@ -189,14 +260,16 @@ const DashboardPage: React.FC = () => {
 
       try {
         const token = localStorage.getItem('token');
+        const params: Record<string, any> = { year: selectedYear };
+        if (selectedVehicleId) {
+          params.vehicleId = selectedVehicleId;
+        }
         const response = await axios.get<EnergyTrendPoint[]>(`${apiBaseUrl}/api/dashboard/energy-trend`, {
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          params: {
-            year: currentYear,
-          },
+          params,
         });
 
         setEnergyTrend(response.data ?? []);
@@ -212,7 +285,85 @@ const DashboardPage: React.FC = () => {
     if (apiBaseUrl) {
       loadEnergyTrend();
     }
-  }, [apiBaseUrl, currentYear]);
+  }, [apiBaseUrl, selectedYear, selectedVehicleId]);
+
+  useEffect(() => {
+    const loadAvailableYears = async () => {
+      if (!apiBaseUrl) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get<number[]>(`${apiBaseUrl}/api/dashboard/available-years`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        setAvailableYears(response.data ?? []);
+      } catch (err) {
+        console.error('Failed to load available years', err);
+      }
+    };
+
+    if (apiBaseUrl) {
+      loadAvailableYears();
+    }
+  }, [apiBaseUrl]);
+
+  useEffect(() => {
+    const loadVehicleSummaries = async () => {
+      if (!apiBaseUrl) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const params: Record<string, any> = {};
+        if (selectedMonth) {
+          params.month = `${selectedMonth.year}-${String(selectedMonth.month).padStart(2, '0')}-01`;
+        }
+        const response = await axios.get<VehicleSummaryDto[]>(`${apiBaseUrl}/api/dashboard/vehicles`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          params,
+        });
+        setVehicleSummaries(response.data ?? []);
+      } catch (err) {
+        console.error('Failed to load vehicle summaries', err);
+      }
+    };
+
+    if (apiBaseUrl) {
+      loadVehicleSummaries();
+    }
+  }, [apiBaseUrl, selectedMonth]);
+
+  useEffect(() => {
+    const loadRecentActivity = async () => {
+      if (!apiBaseUrl) return;
+
+      setActivityLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get<RecentActivityDto[]>(`${apiBaseUrl}/api/dashboard/recent-activity`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          params: { count: 8 },
+        });
+        setRecentActivity(response.data ?? []);
+      } catch (err) {
+        console.error('Failed to load recent activity', err);
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+
+    if (apiBaseUrl) {
+      loadRecentActivity();
+    }
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     const loadDueReminders = async () => {
@@ -260,10 +411,6 @@ const DashboardPage: React.FC = () => {
     return 'Reminder triggered';
   };
 
-  const toggleFab = () => {
-    setIsFabOpen((prev) => !prev);
-  };
-
   const defaultFuelSummary: FuelSummary = {
     totalCost: 0,
     totalMileageKm: 0,
@@ -273,6 +420,7 @@ const DashboardPage: React.FC = () => {
   const defaultMaintenanceSummary: MaintenanceSummary = {
     dueThisMonth: 0,
     remainingThisMonth: 0,
+    totalCost: 0,
   };
 
   const iceStats = summary?.iceSummary ?? defaultFuelSummary;
@@ -283,6 +431,7 @@ const DashboardPage: React.FC = () => {
       (acc, point) => {
         const fuelCost = point.fuelCost || 0;
         const evCost = point.chargingCost || 0;
+        const maintCost = point.maintenanceCost || 0;
         const totalCost = fuelCost + evCost;
 
         const fuelUsage = point.fuelVolumeLiters || 0;
@@ -292,17 +441,30 @@ const DashboardPage: React.FC = () => {
         acc.totalCost += totalCost;
         acc.totalFuelUsage += fuelUsage;
         acc.totalEvUsage += evUsage;
+        acc.totalMaintenanceCost += maintCost;
         acc.maxCost = Math.max(acc.maxCost, totalCost);
         acc.maxUsage = Math.max(acc.maxUsage, totalUsage);
+        acc.maxMaintenanceCost = Math.max(acc.maxMaintenanceCost, maintCost);
         return acc;
       },
-      { totalCost: 0, totalFuelUsage: 0, totalEvUsage: 0, maxCost: 0, maxUsage: 0 }
+      { totalCost: 0, totalFuelUsage: 0, totalEvUsage: 0, totalMaintenanceCost: 0, maxCost: 0, maxUsage: 0, maxMaintenanceCost: 0 }
     );
   }, [energyTrend]);
   const trendCostMax = energyTrendTotals.maxCost;
   const trendUsageMax = energyTrendTotals.maxUsage;
+  const trendMaintenanceMax = energyTrendTotals.maxMaintenanceCost;
   const hasTrendPoints = energyTrend.length > 0;
-  const energyTrendHasActivity = trendCostMax > 0 || trendUsageMax > 0;
+  const energyTrendHasActivity = trendCostMax > 0 || trendUsageMax > 0 || trendMaintenanceMax > 0;
+
+  const totalFleetCost = useMemo(() => {
+    return vehicleSummaries.reduce((sum, v) => sum + v.monthlyCost, 0);
+  }, [vehicleSummaries]);
+
+  const totalFleetKm = useMemo(() => {
+    return iceStats.totalMileageKm + evStats.totalMileageKm;
+  }, [iceStats.totalMileageKm, evStats.totalMileageKm]);
+
+  const costPerKm = totalFleetKm > 0 ? totalFleetCost / totalFleetKm : 0;
 
   const renderVinBadges = (vins: string[]) => {
     if (!vins || vins.length === 0) {
@@ -329,11 +491,22 @@ const DashboardPage: React.FC = () => {
     );
   };
 
-  const getStackPercent = (value: number, domainMax: number) => {
-    if (domainMax <= 0) {
-      return 0;
+  const getWorkStatusLabel = (status: number) => {
+    switch (status) {
+      case 0: return 'Scheduled';
+      case 1: return 'In Progress';
+      case 2: return 'Completed';
+      default: return 'Unknown';
     }
-    return (value / domainMax) * 100;
+  };
+
+  const getWorkStatusColor = (status: number) => {
+    switch (status) {
+      case 0: return 'bg-red-100 text-red-700';
+      case 1: return 'bg-amber-100 text-amber-700';
+      case 2: return 'bg-green-100 text-green-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
   };
 
   const statCards = [
@@ -364,101 +537,167 @@ const DashboardPage: React.FC = () => {
       onClick: () => history.push('/charging-entries'),
       vins: evStats.vehicleVins,
     },
+    {
+      key: 'maintenance-spend',
+      title: 'Maintenance Spend',
+      primary: formatCurrency(maintenanceStats.totalCost),
+      subtitle: `${formatNumber(maintenanceStats.dueThisMonth)} due now`,
+      description: 'Total maintenance cost this month',
+      onClick: () => history.push('/maintenance-records'),
+      vins: null,
+    },
+    {
+      key: 'cost-per-km',
+      title: 'Cost per km',
+      primary: totalFleetKm > 0 ? formatCurrency(costPerKm) : '—',
+      subtitle: `${formatNumber(totalFleetKm)} km total fleet distance`,
+      description: 'Combined energy + maintenance / km',
+      onClick: () => {},
+      vins: null,
+    },
   ];
   const trendLegend = [
-    { key: 'fuel-cost', label: 'Fuel cost', color: 'bg-rose-500' },
-    { key: 'ev-cost', label: 'EV cost', color: 'bg-emerald-400' },
-    { key: 'fuel-usage', label: 'Fuel usage (L)', color: 'bg-orange-400' },
-    { key: 'ev-usage', label: 'EV usage (kWh)', color: 'bg-violet-500' },
+    { key: 'energy-cost', label: 'Energy cost', color: 'bg-blue-500' },
+    { key: 'maintenance-cost', label: 'Maintenance cost', color: 'bg-amber-500' },
   ];
 
-  const renderEnergyTrendBar = (point: EnergyTrendPoint) => {
-    const fuelCost = point.fuelCost || 0;
-    const evCost = point.chargingCost || 0;
-    const fuelUsage = point.fuelVolumeLiters || 0;
-    const evUsage = point.energyConsumedKwh || 0;
-    const costDomain = trendCostMax > 0 ? trendCostMax : fuelCost + evCost;
-    const usageDomain = trendUsageMax > 0 ? trendUsageMax : fuelUsage + evUsage;
+  const renderLineChart = () => {
+    const chartWidth = 800;
+    const chartHeight = 300;
+    const padding = { top: 20, right: 30, bottom: 40, left: 60 };
+    const innerWidth = chartWidth - padding.left - padding.right;
+    const innerHeight = chartHeight - padding.top - padding.bottom;
 
-    const costSegments = [
-      {
-        key: 'fuel-cost',
-        value: fuelCost,
-        className: 'bg-gradient-to-t from-rose-600 to-rose-400',
-        label: `Fuel spend · ${formatCurrency(fuelCost)}`,
-      },
-      {
-        key: 'ev-cost',
-        value: evCost,
-        className: 'bg-gradient-to-t from-emerald-500 to-emerald-300',
-        label: `EV spend · ${formatCurrency(evCost)}`,
-      },
-    ];
+    const energyCosts = energyTrend.map(p => (p.fuelCost || 0) + (p.chargingCost || 0));
+    const maintCosts = energyTrend.map(p => p.maintenanceCost || 0);
+    const yMax = Math.max(...energyCosts, ...maintCosts, 1);
+    const yStep = yMax > 100 ? Math.ceil(yMax / 5 / 50) * 50 : yMax > 10 ? Math.ceil(yMax / 5 / 10) * 10 : Math.ceil(yMax / 5);
 
-    const usageSegments = [
-      {
-        key: 'fuel-usage',
-        value: fuelUsage,
-        className: 'bg-gradient-to-t from-orange-400 to-orange-300',
-        label: `Fuel usage · ${formatQuantity(fuelUsage, 'L')}`,
-      },
-      {
-        key: 'ev-usage',
-        value: evUsage,
-        className: 'bg-gradient-to-t from-violet-500 to-violet-300',
-        label: `EV usage · ${formatQuantity(evUsage, 'kWh')}`,
-      },
-    ];
+    const xScale = (i: number) => padding.left + (i / 11) * innerWidth;
+    const yScale = (v: number) => padding.top + innerHeight - (v / yMax) * innerHeight;
+
+    const energyPath = energyCosts.map((v, i) => `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(' ');
+    const maintPath = maintCosts.map((v, i) => `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(' ');
+
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * chartWidth;
+      const relX = x - padding.left;
+      const monthIdx = Math.round((relX / innerWidth) * 11);
+      setChartHoveredMonth(Math.max(0, Math.min(11, monthIdx)));
+    };
+
+    const handleMouseLeave = () => setChartHoveredMonth(null);
+
+    const yGridLines = [];
+    for (let v = 0; v <= yMax; v += yStep) {
+      yGridLines.push(v);
+    }
 
     return (
-      <div key={point.month} className="flex flex-col items-center text-center">
-        <div className="flex h-56 w-full items-end justify-center gap-4">
-          <div className="flex h-full flex-col items-center gap-1">
-            <p className="text-[10px] uppercase tracking-wide text-gray-400">Cost</p>
-            <div className="flex h-full w-4 flex-col-reverse overflow-hidden rounded-full bg-gray-100 sm:w-5">
-              {costSegments.map((segment) =>
-                segment.value > 0 ? (
-                  <div
-                    key={segment.key}
-                    className={segment.className}
-                    style={{ height: `${getStackPercent(segment.value, costDomain)}%` }}
-                    title={segment.label}
-                  />
-                ) : null
-              )}
-            </div>
-            <p className="text-[10px] text-gray-500">{formatCurrency(fuelCost + evCost)}</p>
-          </div>
-          <div className="flex h-full flex-col items-center gap-1">
-            <p className="text-[10px] uppercase tracking-wide text-gray-400">Usage</p>
-            <div className="flex h-full w-4 flex-col-reverse overflow-hidden rounded-full bg-gray-100 sm:w-5">
-              {usageSegments.map((segment) =>
-                segment.value > 0 ? (
-                  <div
-                    key={segment.key}
-                    className={segment.className}
-                    style={{ height: `${getStackPercent(segment.value, usageDomain)}%` }}
-                    title={segment.label}
-                  />
-                ) : null
-              )}
-            </div>
-            <p className="text-[10px] text-gray-500">
-              {fuelUsage > 0 && `${formatQuantity(fuelUsage, 'L')}`}
-              {fuelUsage > 0 && evUsage > 0 && ' · '}
-              {evUsage > 0 && `${formatQuantity(evUsage, 'kWh')}`}
-              {fuelUsage === 0 && evUsage === 0 && 'No usage'}
-            </p>
-          </div>
-        </div>
-        <p className="mt-2 text-xs font-semibold text-gray-700">{point.monthLabel}</p>
+      <div className="mt-4">
+        <svg
+          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+          className="w-full h-auto"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          {yGridLines.map((v) => (
+            <g key={v}>
+              <line x1={padding.left} y1={yScale(v)} x2={chartWidth - padding.right} y2={yScale(v)} stroke="#e5e7eb" strokeWidth="1" />
+              <text x={padding.left - 8} y={yScale(v) + 4} textAnchor="end" className="text-[10px] fill-gray-400">
+                {formatCurrency(v)}
+              </text>
+            </g>
+          ))}
+
+          {energyTrend.map((_, i) => (
+            <text key={i} x={xScale(i)} y={chartHeight - 8} textAnchor="middle" className="text-[10px] fill-gray-500 font-medium">
+              {energyTrend[i].monthLabel}
+            </text>
+          ))}
+
+          <line x1={padding.left} y1={padding.top} x2={padding.left} y2={chartHeight - padding.bottom} stroke="#d1d5db" strokeWidth="1" />
+          <line x1={padding.left} y1={chartHeight - padding.bottom} x2={chartWidth - padding.right} y2={chartHeight - padding.bottom} stroke="#d1d5db" strokeWidth="1" />
+
+          <path d={energyPath} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+          <path d={maintPath} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+
+          {energyCosts.map((v, i) => (
+            <circle key={`e-${i}`} cx={xScale(i)} cy={yScale(v)} r={chartHoveredMonth === i ? 5 : 3} fill="#3b82f6" stroke="white" strokeWidth="1.5" />
+          ))}
+          {maintCosts.map((v, i) => (
+            <circle key={`m-${i}`} cx={xScale(i)} cy={yScale(v)} r={chartHoveredMonth === i ? 5 : 3} fill="#f59e0b" stroke="white" strokeWidth="1.5" />
+          ))}
+
+          {chartHoveredMonth !== null && chartHoveredMonth < energyTrend.length && (
+            <>
+              <line x1={xScale(chartHoveredMonth)} y1={padding.top} x2={xScale(chartHoveredMonth)} y2={chartHeight - padding.bottom} stroke="#9ca3af" strokeWidth="1" strokeDasharray="4 2" />
+              <rect x={Math.min(xScale(chartHoveredMonth) - 70, chartWidth - padding.right - 150)} y={8} width={150} height={56} rx={6} fill="white" stroke="#e5e7eb" strokeWidth="1" />
+              <text x={Math.min(xScale(chartHoveredMonth) - 62, chartWidth - padding.right - 142)} y={24} className="text-[11px] fill-gray-700 font-semibold">
+                {energyTrend[chartHoveredMonth].monthLabel} {selectedYear}
+              </text>
+              <text x={Math.min(xScale(chartHoveredMonth) - 62, chartWidth - padding.right - 142)} y={38} className="text-[10px] fill-blue-500">
+                Energy: {formatCurrency(energyCosts[chartHoveredMonth])}
+              </text>
+              <text x={Math.min(xScale(chartHoveredMonth) - 62, chartWidth - padding.right - 142)} y={52} className="text-[10px] fill-amber-500">
+                Maintenance: {formatCurrency(maintCosts[chartHoveredMonth])}
+              </text>
+            </>
+          )}
+        </svg>
       </div>
     );
   };
 
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'Fuel':
+        return (
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h4l2 5v11a2 2 0 002 2h2a2 2 0 002-2V8l2-5h4" />
+          </svg>
+        );
+      case 'Charging':
+        return (
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        );
+      case 'Maintenance':
+        return (
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getActivityColor = (type: string) => {
+    switch (type) {
+      case 'Fuel': return 'text-orange-500 bg-orange-50';
+      case 'Charging': return 'text-emerald-500 bg-emerald-50';
+      case 'Maintenance': return 'text-indigo-500 bg-indigo-50';
+      default: return 'text-gray-500 bg-gray-50';
+    }
+  };
+
+  const months = [
+    { value: 1, label: 'Jan' }, { value: 2, label: 'Feb' }, { value: 3, label: 'Mar' },
+    { value: 4, label: 'Apr' }, { value: 5, label: 'May' }, { value: 6, label: 'Jun' },
+    { value: 7, label: 'Jul' }, { value: 8, label: 'Aug' }, { value: 9, label: 'Sep' },
+    { value: 10, label: 'Oct' }, { value: 11, label: 'Nov' }, { value: 12, label: 'Dec' },
+  ];
+
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYearNum = new Date().getFullYear();
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-100">
-      {/* Sidebar */}
       <aside className="w-full md:w-64 bg-white shadow-md flex flex-col">
         <div className="px-6 py-4 border-b">
           <h1 className="text-xl font-bold text-blue-600">Helium Dashboard</h1>
@@ -472,16 +711,15 @@ const DashboardPage: React.FC = () => {
           <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-100">Reports</a>
         </nav>
         <div className="px-4 py-4 border-t text-xs text-gray-500">
-          Logged in sample user
+          {user ? `${user.firstName} ${user.lastName}` : 'Loading user...'}
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="relative flex-1 p-4 md:p-8">
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <div>
             <h2 className="text-2xl font-semibold text-gray-800">Overview</h2>
-            <p className="text-sm text-gray-500">Sample dashboard after successful login.</p>
+            <p className="text-sm text-gray-500">Welcome, {user?.firstName || 'User'}!</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -560,7 +798,33 @@ const DashboardPage: React.FC = () => {
         <section className="mb-8">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-700">Fleet Snapshot</h3>
-            {statsLoading && <span className="text-xs text-gray-500">Refreshing…</span>}
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedMonth ? selectedMonth.month : currentMonth}
+                onChange={(e) => {
+                  const m = parseInt(e.target.value, 10);
+                  setSelectedMonth({ year: selectedMonth?.year ?? currentYearNum, month: m, day: 1 });
+                }}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
+              >
+                {months.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+              <select
+                value={selectedMonth?.year ?? currentYearNum}
+                onChange={(e) => {
+                  const y = parseInt(e.target.value, 10);
+                  setSelectedMonth({ year: y, month: selectedMonth?.month ?? currentMonth, day: 1 });
+                }}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
+              >
+                {[currentYearNum - 2, currentYearNum - 1, currentYearNum, currentYearNum + 1].map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              {statsLoading && <span className="text-xs text-gray-500">Refreshing…</span>}
+            </div>
           </div>
           {statsError && (
             <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
@@ -588,15 +852,91 @@ const DashboardPage: React.FC = () => {
         <section className="mb-8 rounded-2xl bg-white p-4 shadow md:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Energy Spend & Usage</p>
-              <p className="text-sm text-gray-500">Stacked cost and consumption overview for {currentYear}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Vehicles at a Glance</p>
+              <p className="text-sm text-gray-500">Per-vehicle overview for {monthLabel}</p>
             </div>
-            <div className="text-right">
-              <p className="text-[11px] uppercase tracking-wide text-gray-400">Year-to-date spend</p>
-              <p className="text-xl font-semibold text-gray-900">{formatCurrency(energyTrendTotals.totalCost)}</p>
-              <p className="text-[11px] text-gray-500">
-                Fuel {formatQuantity(energyTrendTotals.totalFuelUsage, 'L')} · EV {formatQuantity(energyTrendTotals.totalEvUsage, 'kWh')}
-              </p>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            {vehicleSummaries.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-500">
+                No vehicles added yet. Add a vehicle to see its summary here.
+              </div>
+            ) : (
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Vehicle</th>
+                    <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Type</th>
+                    <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Odometer</th>
+                    <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Monthly Cost</th>
+                    <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Next Maintenance</th>
+                    <th className="text-center py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vehicleSummaries.map((v) => (
+                    <tr key={v.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-3 px-3 font-medium text-gray-900">{v.name}</td>
+                      <td className="py-3 px-3 text-gray-600">{v.powertrainType}</td>
+                      <td className="py-3 px-3 text-right text-gray-600">{formatNumber(v.currentOdometerKm)} km</td>
+                      <td className="py-3 px-3 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyCost)}</td>
+                      <td className="py-3 px-3 text-gray-600">
+                        {v.nextMaintenanceType ? (
+                          <span>
+                            {v.nextMaintenanceType}
+                            {v.nextMaintenanceDue ? <span className="text-xs text-gray-400 ml-1">({v.nextMaintenanceDue})</span> : null}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${getWorkStatusColor(v.workStatus)}`}>
+                          {getWorkStatusLabel(v.workStatus)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-2xl bg-white p-4 shadow md:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Cost Overview</p>
+              <p className="text-sm text-gray-500">Monthly energy and maintenance costs</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-[11px] uppercase tracking-wide text-gray-400">Year total</p>
+                <p className="text-xl font-semibold text-gray-900">{formatCurrency(energyTrendTotals.totalCost + energyTrendTotals.totalMaintenanceCost)}</p>
+                <p className="text-[11px] text-gray-500">
+                  Energy {formatCurrency(energyTrendTotals.totalCost)} · Maintenance {formatCurrency(energyTrendTotals.totalMaintenanceCost)}
+                </p>
+              </div>
+              <select
+                value={selectedVehicleId}
+                onChange={(e) => setSelectedVehicleId(e.target.value)}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
+              >
+                <option value="">All Vehicles</option>
+                {vehicleSummaries.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
+              >
+                {availableYears.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -606,24 +946,20 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
 
-          <div className="mt-4">
-            {trendLoading ? (
-              <div className="h-56 w-full animate-pulse rounded-2xl bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100" />
-            ) : hasTrendPoints ? (
-              <>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12">
-                  {energyTrend.map((point) => renderEnergyTrendBar(point))}
-                </div>
-                {!energyTrendHasActivity && (
-                  <p className="mt-4 text-center text-xs text-gray-500">No fuel or charging usage logged for {currentYear} yet.</p>
-                )}
-              </>
-            ) : (
-              <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500">
-                No fuel or charging history recorded for {currentYear} yet.
-              </div>
-            )}
-          </div>
+          {trendLoading ? (
+            <div className="mt-4 h-56 w-full animate-pulse rounded-2xl bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100" />
+          ) : hasTrendPoints ? (
+            <>
+              {renderLineChart()}
+              {!energyTrendHasActivity && (
+                <p className="mt-4 text-center text-xs text-gray-500">No costs logged for {selectedYear} yet.</p>
+              )}
+            </>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500">
+              No cost history recorded for {selectedYear} yet.
+            </div>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-600">
             {trendLegend.map((legend) => (
@@ -650,7 +986,7 @@ const DashboardPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-gray-200 p-4">
               <p className="text-xs uppercase tracking-wide text-gray-500">Due now / overdue</p>
               <p className="mt-2 text-4xl font-semibold text-red-600">{formatNumber(maintenanceStats.dueThisMonth)}</p>
@@ -660,6 +996,11 @@ const DashboardPage: React.FC = () => {
               <p className="text-xs uppercase tracking-wide text-gray-500">Remaining reminders</p>
               <p className="mt-2 text-4xl font-semibold text-amber-500">{formatNumber(maintenanceStats.remainingThisMonth)}</p>
               <p className="text-sm text-gray-500">Scheduled later in {monthLabel}.</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Maintenance spend</p>
+              <p className="mt-2 text-4xl font-semibold text-blue-600">{formatCurrency(maintenanceStats.totalCost)}</p>
+              <p className="text-sm text-gray-500">Total cost this month.</p>
             </div>
           </div>
 
@@ -673,62 +1014,83 @@ const DashboardPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Floating action button */}
-        <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8">
-          {/* Expanded options */}
-          {isFabOpen && (
-            <div className="mb-3 flex flex-col items-end space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = '/vehicles/new';
-                }}
-                className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 shadow hover:bg-gray-50 border border-gray-200"
-              >
-                <span className="mr-2 text-gray-400 text-lg">+</span>
-                Add Vehicle
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = '/fuel-entries/new';
-                }}
-                className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 shadow hover:bg-gray-50 border border-gray-200"
-              >
-                <span className="mr-2 text-gray-400 text-lg">+</span>
-                Add Fuel Entry
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = '/charging-entries/new';
-                }}
-                className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 shadow hover:bg-gray-50 border border-gray-200"
-              >
-                <span className="mr-2 text-gray-400 text-lg">+</span>
-                Add Charging Entry
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = '/maintenance-records/new';
-                }}
-                className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 shadow hover:bg-gray-50 border border-gray-200"
-              >
-                <span className="mr-2 text-gray-400 text-lg">+</span>
-                Add Maintenance
-              </button>
+        <section className="mb-8 rounded-2xl bg-white p-4 shadow md:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">Recent Activity</p>
+              <p className="text-sm text-gray-500">Latest entries across all vehicles</p>
+            </div>
+          </div>
+
+          {activityLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <div className="h-10 w-10 rounded-full bg-gray-100" />
+                  <div className="flex-1">
+                    <div className="h-4 w-3/4 bg-gray-100 rounded" />
+                    <div className="h-3 w-1/2 bg-gray-100 rounded mt-1" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentActivity.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-500">
+              No recent activity. Start logging fuel, charging, or maintenance entries.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getActivityColor(activity.activityType)}`}>
+                    {getActivityIcon(activity.activityType)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{activity.description}</p>
+                    <p className="text-xs text-gray-500">{activity.vehicleName} · {new Date(activity.activityDate).toLocaleDateString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-900">{formatCurrency(activity.cost)}</p>
+                    <span className="text-[10px] uppercase tracking-wide text-gray-400">{activity.activityType}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
+        </section>
 
-          {/* Main + button */}
+        <div className="flex flex-wrap gap-3 mb-6">
           <button
             type="button"
-            onClick={toggleFab}
-            aria-label="Add new record"
-            className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center text-3xl sm:text-4xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => { window.location.href = '/vehicles/new'; }}
+            className="inline-flex items-center rounded-full bg-blue-600 text-white px-4 py-2 text-sm font-medium shadow hover:bg-blue-700 transition"
           >
-            {isFabOpen ? '×' : '+'}
+            <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Add Vehicle
+          </button>
+          <button
+            type="button"
+            onClick={() => { window.location.href = '/fuel-entries/new'; }}
+            className="inline-flex items-center rounded-full bg-orange-500 text-white px-4 py-2 text-sm font-medium shadow hover:bg-orange-600 transition"
+          >
+            <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Add Fuel Entry
+          </button>
+          <button
+            type="button"
+            onClick={() => { window.location.href = '/charging-entries/new'; }}
+            className="inline-flex items-center rounded-full bg-emerald-500 text-white px-4 py-2 text-sm font-medium shadow hover:bg-emerald-600 transition"
+          >
+            <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Add Charging Entry
+          </button>
+          <button
+            type="button"
+            onClick={() => { window.location.href = '/maintenance-records/new'; }}
+            className="inline-flex items-center rounded-full bg-indigo-500 text-white px-4 py-2 text-sm font-medium shadow hover:bg-indigo-600 transition"
+          >
+            <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Add Maintenance
           </button>
         </div>
       </main>

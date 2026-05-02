@@ -39,7 +39,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("energy-trend")]
-    public async Task<ActionResult<IReadOnlyList<EnergyTrendPointDto>>> GetEnergyTrend([FromQuery] int? year, CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<EnergyTrendPointDto>>> GetEnergyTrend([FromQuery] int? year, [FromQuery] Guid? vehicleId, CancellationToken cancellationToken)
     {
         if (!TryResolveUserId(out var userId))
         {
@@ -47,8 +47,49 @@ public class DashboardController : ControllerBase
         }
 
         var targetYear = year.HasValue && year.Value > 0 ? year.Value : DateTime.UtcNow.Year;
-        var trend = await _dashboardService.GetYearlyEnergyTrendAsync(userId, targetYear, cancellationToken);
+        var trend = await _dashboardService.GetYearlyEnergyTrendAsync(userId, targetYear, vehicleId, cancellationToken);
         return Ok(trend);
+    }
+
+    [HttpGet("available-years")]
+    public async Task<ActionResult<IReadOnlyList<int>>> GetAvailableYears(CancellationToken cancellationToken)
+    {
+        if (!TryResolveUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var years = await _dashboardService.GetAvailableYearsAsync(userId, cancellationToken);
+        return Ok(years);
+    }
+
+    [HttpGet("vehicles")]
+    public async Task<ActionResult<IReadOnlyList<VehicleSummaryDto>>> GetVehicleSummaries([FromQuery] DateOnly? month, CancellationToken cancellationToken)
+    {
+        if (!TryResolveUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var referenceDate = month ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var monthStart = new DateOnly(referenceDate.Year, referenceDate.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+        var summaries = await _dashboardService.GetVehicleSummariesAsync(userId, monthStart, monthEnd, cancellationToken);
+        return Ok(summaries);
+    }
+
+    [HttpGet("recent-activity")]
+    public async Task<ActionResult<IReadOnlyList<RecentActivityDto>>> GetRecentActivity([FromQuery] int? count, CancellationToken cancellationToken)
+    {
+        if (!TryResolveUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var targetCount = count.HasValue && count.Value > 0 ? count.Value : 10;
+        var activities = await _dashboardService.GetRecentActivityAsync(userId, targetCount, cancellationToken);
+        return Ok(activities);
     }
 
     private bool TryResolveUserId(out Guid userId)

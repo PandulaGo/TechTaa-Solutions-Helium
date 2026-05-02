@@ -8,7 +8,9 @@ public class EnergyTrendPointDto
     public decimal ChargingCost { get; set; }
     public decimal FuelVolumeLiters { get; set; }
     public decimal EnergyConsumedKwh { get; set; }
+    public decimal MaintenanceCost { get; set; }
 
     public decimal TotalCost => FuelCost + ChargingCost;
     public decimal TotalUsage => FuelVolumeLiters + EnergyConsumedKwh;
+    public decimal GrandTotalCost => FuelCost + ChargingCost + MaintenanceCost;
 }
