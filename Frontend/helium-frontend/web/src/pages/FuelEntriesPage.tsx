@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 
@@ -35,13 +36,14 @@ const FuelEntriesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const loadEntries = async () => {
+  const loadEntries = useCallback(async () => {
     if (!apiBaseUrl) {
       return;
     }
 
-    setLoadingEntries(true);
-    setError(null);
+      setLoadingEntries(true);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      setError(null);
 
     try {
       const token = localStorage.getItem('token');
@@ -64,7 +66,7 @@ const FuelEntriesPage: React.FC = () => {
     } finally {
       setLoadingEntries(false);
     }
-  };
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -87,7 +89,7 @@ const FuelEntriesPage: React.FC = () => {
     if (!loadingSettings && apiBaseUrl) {
       loadEntries();
     }
-  }, [apiBaseUrl, loadingSettings]);
+  }, [apiBaseUrl, loadingSettings, loadEntries]);
 
   const handleDelete = async (entryId: string) => {
     if (!apiBaseUrl) {

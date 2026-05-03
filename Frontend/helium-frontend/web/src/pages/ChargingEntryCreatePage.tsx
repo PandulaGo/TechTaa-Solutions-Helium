@@ -52,8 +52,8 @@ const ChargingEntryCreatePage: React.FC = () => {
       return;
     }
 
-    if (selectedVehicle.powertrainType !== 3) {
-      setVehicleWarning('Selected vehicle is not electric. Charging entries are typically for electric vehicles.');
+    if (selectedVehicle.powertrainType !== 3 && selectedVehicle.powertrainType !== 2) {
+      setVehicleWarning('Selected vehicle is not electric or hybrid. Charging entries are for electric or hybrid vehicles.');
     } else {
       setVehicleWarning(null);
     }

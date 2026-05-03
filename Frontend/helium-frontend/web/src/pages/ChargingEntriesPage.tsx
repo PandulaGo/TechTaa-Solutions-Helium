@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 
@@ -51,36 +52,36 @@ const ChargingEntriesPage: React.FC = () => {
     loadSettings();
   }, []);
 
-    const loadEntries = async () => {
-      if (!apiBaseUrl) {
-        return;
-      }
+  const loadEntries = useCallback(async () => {
+    if (!apiBaseUrl) {
+      return;
+    }
 
       setLoadingEntries(true);
       setError(null);
 
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get<PagedResult<ChargingEntryDto>>(`${apiBaseUrl}/api/chargingentries`, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          params: {
-            page: 1,
-            pageSize: 200,
-          },
-        });
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get<PagedResult<ChargingEntryDto>>(`${apiBaseUrl}/api/chargingentries`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        params: {
+          page: 1,
+          pageSize: 200,
+        },
+      });
 
-        setEntries(response.data?.items ?? []);
-      } catch (err: any) {
-        console.error('Failed to load charging entries', err);
-        const backendDetail = err?.response?.data?.detail as string | undefined;
-        setError(backendDetail || 'Unable to load charging entries.');
-      } finally {
-        setLoadingEntries(false);
-      }
-    };
+      setEntries(response.data?.items ?? []);
+    } catch (err: any) {
+      console.error('Failed to load charging entries', err);
+      const backendDetail = err?.response?.data?.detail as string | undefined;
+      setError(backendDetail || 'Unable to load charging entries.');
+    } finally {
+      setLoadingEntries(false);
+    }
+  }, [apiBaseUrl]);
 
   const handleDelete = async (entryId: string) => {
     if (!apiBaseUrl) {
@@ -117,7 +118,7 @@ const ChargingEntriesPage: React.FC = () => {
     if (!loadingSettings && apiBaseUrl) {
       loadEntries();
     }
-  }, [apiBaseUrl, loadingSettings]);
+  }, [apiBaseUrl, loadingSettings, loadEntries]);
 
   const handleUpdate = (entryId: string) => {
     history.push(`/charging-entries/${entryId}/edit`);

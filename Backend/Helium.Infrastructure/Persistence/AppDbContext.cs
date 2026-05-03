@@ -46,6 +46,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<FuelEntry>(entity =>
         {
             entity.HasKey(f => f.Id);
+            entity.Property(f => f.Cost).HasColumnType("decimal(18,2)");
+            entity.Property(f => f.Liters).HasColumnType("decimal(18,2)");
             entity.Property(f => f.FuelStationName).HasMaxLength(200);
             entity.HasOne(f => f.User).WithMany().HasForeignKey(f => f.UserId).OnDelete(DeleteBehavior.NoAction);
         });
@@ -53,6 +55,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ChargingEntry>(entity =>
         {
             entity.HasKey(c => c.Id);
+            entity.Property(c => c.Cost).HasColumnType("decimal(18,2)");
+            entity.Property(c => c.KwhUsed).HasColumnType("decimal(18,2)");
             entity.Property(c => c.ChargingLocation).HasMaxLength(200);
             entity.HasOne(c => c.User).WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.NoAction);
         });

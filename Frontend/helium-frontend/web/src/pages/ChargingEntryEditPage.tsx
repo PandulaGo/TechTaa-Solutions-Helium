@@ -6,6 +6,12 @@ interface AppSettings {
   apiBaseUrl: string;
 }
 
+interface VehicleDto {
+  id: string;
+  name: string;
+  powertrainType: number;
+}
+
 interface ChargingEntryDto {
   id: string;
   vehicleId: string;
@@ -17,6 +23,13 @@ interface ChargingEntryDto {
   chargingLocation: string;
 }
 
+interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
 const ChargingEntryEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
@@ -24,9 +37,13 @@ const ChargingEntryEditPage: React.FC = () => {
   const [apiBaseUrl, setApiBaseUrl] = useState<string | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [loadingEntry, setLoadingEntry] = useState(true);
+  const [, setLoadingVehicles] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [vehicleWarning, setVehicleWarning] = useState<string | null>(null);
+  const [vehicles, setVehicles] = useState<VehicleDto[]>([]);
   const [vehicleId, setVehicleId] = useState<string>('');
 
   const [form, setForm] = useState({
@@ -94,6 +111,63 @@ const ChargingEntryEditPage: React.FC = () => {
       loadEntry();
     }
   }, [apiBaseUrl, id, loadingSettings]);
+
+  useEffect(() => {
+    const loadVehicles = async () => {
+      if (!apiBaseUrl) {
+        return;
+      }
+
+      setLoadingVehicles(true);
+      setError(null);
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get<PagedResult<VehicleDto>>(`${apiBaseUrl}/api/vehicles`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          params: {
+            page: 1,
+            pageSize: 100,
+          },
+        });
+
+        setVehicles(response.data?.items ?? []);
+      } catch (err: any) {
+        console.error('Failed to load vehicles', err);
+        const backendDetail = err?.response?.data?.detail as string | undefined;
+        setError(backendDetail || 'Unable to load vehicles for selection.');
+      } finally {
+        setLoadingVehicles(false);
+      }
+    };
+
+    if (!loadingSettings && apiBaseUrl) {
+      loadVehicles();
+    }
+  }, [apiBaseUrl, loadingSettings]);
+
+  useEffect(() => {
+    if (!vehicleId) {
+      setVehicleWarning(null);
+      return;
+    }
+
+    const selectedVehicle = vehicles.find((vehicle) => vehicle.id === vehicleId);
+    if (!selectedVehicle) {
+      setVehicleWarning(null);
+      return;
+    }
+
+    const allowedChargingTypes = new Set([2, 3]); // Hybrid + Electric
+    if (!allowedChargingTypes.has(selectedVehicle.powertrainType)) {
+      setVehicleWarning('Selected vehicle is not electric or hybrid. Charging entries are for electric or hybrid vehicles.');
+    } else {
+      setVehicleWarning(null);
+    }
+  }, [vehicleId, vehicles]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

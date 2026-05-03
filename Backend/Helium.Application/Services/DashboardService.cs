@@ -28,19 +28,22 @@ public class DashboardService : IDashboardService
             .ToList();
 
         var vehicleIds = vehicles.Select(v => v.Id).ToList();
-        var iceVehicles = vehicles.Where(v => v.PowertrainType != PowertrainType.Electric).ToList();
+        var iceVehicles = vehicles.Where(v => v.PowertrainType == PowertrainType.Petrol || v.PowertrainType == PowertrainType.Diesel).ToList();
+        var hybridVehicles = vehicles.Where(v => v.PowertrainType == PowertrainType.Hybrid).ToList();
         var evVehicles = vehicles.Where(v => v.PowertrainType == PowertrainType.Electric).ToList();
         var iceVehicleIds = iceVehicles.Select(v => v.Id).ToList();
+        var hybridVehicleIds = hybridVehicles.Select(v => v.Id).ToList();
         var evVehicleIds = evVehicles.Select(v => v.Id).ToList();
+        var fuelCapableIds = iceVehicleIds.Concat(hybridVehicleIds).ToList();
 
         var fuelEntries = _unitOfWork.Repository<FuelEntry>().Query()
-            .Where(entry => iceVehicleIds.Contains(entry.VehicleId)
+            .Where(entry => fuelCapableIds.Contains(entry.VehicleId)
                             && entry.Date >= monthStart
                             && entry.Date <= monthEnd)
             .ToList();
 
         var chargingEntries = _unitOfWork.Repository<ChargingEntry>().Query()
-            .Where(entry => evVehicleIds.Contains(entry.VehicleId)
+            .Where(entry => (hybridVehicleIds.Concat(evVehicleIds)).Contains(entry.VehicleId)
                             && entry.Date >= monthStart
                             && entry.Date <= monthEnd)
             .ToList();
@@ -67,7 +70,7 @@ public class DashboardService : IDashboardService
         {
             VehicleCount = vehicles.Count,
             IceSummary = BuildFuelSummary(iceVehicles, fuelEntries, e => e.VehicleId, e => e.OdometerReadingKm, e => e.Cost),
-            EvSummary = BuildFuelSummary(evVehicles, chargingEntries, e => e.VehicleId, e => e.OdometerReadingKm, e => e.Cost),
+            EvSummary = BuildFuelSummary(hybridVehicles.Concat(evVehicles).ToList(), chargingEntries, e => e.VehicleId, e => e.OdometerReadingKm, e => e.Cost),
             MaintenanceSummary = maintenanceSummary
         };
 
@@ -76,14 +79,19 @@ public class DashboardService : IDashboardService
 
     public Task<IReadOnlyList<EnergyTrendPointDto>> GetYearlyEnergyTrendAsync(Guid userId, int year, Guid? vehicleId = null, CancellationToken cancellationToken = default)
     {
-        var vehicleIds = _unitOfWork.Repository<Vehicle>().Query()
+        var vehicles = _unitOfWork.Repository<Vehicle>().Query()
             .Where(v => v.UserId == userId)
-            .Select(v => v.Id)
             .ToList();
 
-        var targetIds = vehicleId.HasValue && vehicleIds.Contains(vehicleId.Value)
+        var targetIds = vehicleId.HasValue && vehicles.Select(v => v.Id).Contains(vehicleId.Value)
             ? new List<Guid> { vehicleId.Value }
-            : vehicleIds;
+            : vehicles.Select(v => v.Id).ToList();
+
+        var targetVehicles = vehicles.Where(v => targetIds.Contains(v.Id)).ToList();
+        var hybridAndEvIds = targetVehicles
+            .Where(v => v.PowertrainType == PowertrainType.Hybrid || v.PowertrainType == PowertrainType.Electric)
+            .Select(v => v.Id)
+            .ToList();
 
         var boundedYear = year <= 0 ? DateTime.UtcNow.Year : year;
         var yearStart = new DateOnly(boundedYear, 1, 1);
@@ -98,7 +106,7 @@ public class DashboardService : IDashboardService
 
         var chargingEntries = _unitOfWork.Repository<ChargingEntry>().Query()
             .Where(entry => entry.UserId == userId
-                            && targetIds.Contains(entry.VehicleId)
+                            && hybridAndEvIds.Contains(entry.VehicleId)
                             && entry.Date >= yearStart
                             && entry.Date <= yearEnd)
             .ToList();

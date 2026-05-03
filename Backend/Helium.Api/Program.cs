@@ -30,6 +30,10 @@ builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration).ReadFrom.Services(services));
 
 builder.Services.AddControllers();
+builder.Services.Configure<RouteOptions>(options =>
+{
+    options.LowercaseUrls = true;
+});
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 // Swagger temporarily disabled due to Swashbuckle type load issue on this runtime.
