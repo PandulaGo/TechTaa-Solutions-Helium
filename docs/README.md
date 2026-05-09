@@ -7,6 +7,7 @@
 | File | Description |
 |------|-------------|
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture, layer descriptions, tech stack, and data flow diagrams |
+| [BUSINESS_LOGIC.md](./BUSINESS_LOGIC.md) | All business rules, calculations, formulas, validations, and auth logic |
 | [API.md](./API.md) | Complete REST API endpoint reference — methods, routes, auth, request/response shapes |
 | [ROADMAP.md](./ROADMAP.md) | Feature roadmap & value-add ideas organized by priority |
 | [DECISIONS.md](./DECISIONS.md) | Architecture Decision Records (ADRs) — rationale behind key technical choices |

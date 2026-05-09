@@ -19,6 +19,9 @@ interface VehicleSummaryDto {
   name: string;
   powertrainType: string;
   currentOdometerKm: number;
+  monthlyFuelCost: number;
+  monthlyChargingCost: number;
+  monthlyMaintenanceCost: number;
   monthlyCost: number;
   nextMaintenanceType?: string | null;
   nextMaintenanceDue?: string | null;
@@ -636,7 +639,9 @@ const DashboardPage: React.FC = () => {
                       <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Vehicle</th>
                       <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Type</th>
                       <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Odometer</th>
-                      <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Monthly Cost</th>
+                      <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Fuel</th>
+                      <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Charging</th>
+                      <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Maintenance</th>
                       <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Next Maintenance</th>
                       <th className="text-center py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
                     </tr>
@@ -647,7 +652,9 @@ const DashboardPage: React.FC = () => {
                         <td className="py-3 px-3 font-medium text-gray-900">{v.name}</td>
                         <td className="py-3 px-3 text-gray-600">{v.powertrainType}</td>
                         <td className="py-3 px-3 text-right text-gray-600">{formatNumber(v.currentOdometerKm)} km</td>
-                        <td className="py-3 px-3 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyCost)}</td>
+                        <td className="py-3 px-3 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyFuelCost)}</td>
+                        <td className="py-3 px-3 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyChargingCost)}</td>
+                        <td className="py-3 px-3 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyMaintenanceCost)}</td>
                         <td className="py-3 px-3 text-gray-600">
                           {v.nextMaintenanceType ? (
                             <span>

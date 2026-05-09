@@ -82,23 +82,13 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-// Enable CORS for frontend
+
 app.UseCors("AllowFrontend");
-
-// Swagger middleware disabled while package compatibility is resolved.
-// if (app.Environment.IsDevelopment())
-// {
-// 	app.UseSwagger();
-// 	app.UseSwaggerUI();
-// }
-
-// Force HTTP only (no automatic HTTPS redirect).
-// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+Console.WriteLine("Helium App | Service started successfully");
 app.Run();
 
