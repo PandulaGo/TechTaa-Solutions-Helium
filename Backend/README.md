@@ -151,10 +151,10 @@ Password requirements are enforced both in backend and frontend.
   - Serilog configuration
 
 The API listens by default on:
-- `http://localhost:5297`
+- `http://localhost:10011`
 - `https://localhost:7165`
 
-Cross-origin requests from the frontend are enabled via a CORS policy that allows `http://localhost:3000`.
+Cross-origin requests from the frontend are enabled via a CORS policy that allows `http://localhost:10015`.
 
 ## Build Status
 - `dotnet build` succeeds (after package version alignment).

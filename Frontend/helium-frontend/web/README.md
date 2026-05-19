@@ -53,7 +53,7 @@ To get started with the web application, follow these steps:
   - Edit `public/appsettings.json` and set the `apiBaseUrl` to your backend URL, for example:
     ```
     {
-     "apiBaseUrl": "http://localhost:5297"
+     "apiBaseUrl": "http://localhost:10011"
     }
     ```
 
@@ -62,7 +62,7 @@ To get started with the web application, follow these steps:
   npm start
   ```
 
-The application will be available at `http://localhost:3000` and will call the backend using the `apiBaseUrl` from `appsettings.json`.
+The application will be available at `http://localhost:10015` and will call the backend using the `apiBaseUrl` from `appsettings.json`.
 
 ## Tailwind CSS
 

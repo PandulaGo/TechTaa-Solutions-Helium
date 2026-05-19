@@ -1,6 +1,6 @@
 # API Reference
 
-Base URL: `http://localhost:50001` (default)
+Base URL: `http://localhost:10011` (default)
 **All URLs are lowercase** due to `LowercaseUrls = true` in the backend config. Routes below use lowercase.
 
 ## Authentication

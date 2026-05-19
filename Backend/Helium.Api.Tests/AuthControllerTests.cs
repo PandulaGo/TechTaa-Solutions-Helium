@@ -22,7 +22,7 @@ namespace Helium.Api.Tests
             };
 
             // Act
-            var response = await client.PostAsJsonAsync("http://localhost:5297/api/auth/register", request);
+            var response = await client.PostAsJsonAsync("http://localhost:10011/api/auth/register", request);
             var content = await response.Content.ReadAsStringAsync();
 
             // Assert

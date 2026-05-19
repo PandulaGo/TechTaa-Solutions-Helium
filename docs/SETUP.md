@@ -71,10 +71,10 @@ dotnet run --project Helium.Api/Helium.Api.csproj
 ```
 
 The API starts on:
-- `http://localhost:50001`
+- `http://localhost:10011`
 - `https://localhost:7165`
 
-To verify: visit `http://localhost:50001/api/health` — should return `{"status":"ok"}`.
+To verify: visit `http://localhost:10011/api/health` — should return `{"status":"ok"}`.
 
 ---
 
@@ -93,7 +93,7 @@ Edit `public/appsettings.json`:
 
 ```json
 {
-  "apiBaseUrl": "http://localhost:50001"
+  "apiBaseUrl": "http://localhost:10011"
 }
 ```
 
@@ -105,7 +105,7 @@ Match the URL where the backend is running.
 npm start
 ```
 
-Opens at `http://localhost:50005`.
+Opens at `http://localhost:10015`.
 
 ---
 
@@ -132,8 +132,8 @@ Requires an emulator or physical device.
 
 ## 5. Verify Everything Works
 
-1. Backend is running → `http://localhost:50001/api/health` returns ok
-2. Frontend is running → `http://localhost:50005` loads
+1. Backend is running → `http://localhost:10011/api/health` returns ok
+2. Frontend is running → `http://localhost:10015` loads
 3. Create an account via the Signup page
 4. Log in → redirected to Dashboard
 5. Add a vehicle → appears in Vehicles list
@@ -150,7 +150,7 @@ Requires an emulator or physical device.
 
 ### CORS error in browser
 - Ensure the backend URL in `public/appsettings.json` matches exactly (including port)
-- Backend CORS is configured to allow `http://localhost:50005` only
+- Backend CORS is configured to allow `http://localhost:10015` only
 
 ### JWT token expired
 - Tokens expire after 120 minutes (configurable in `appsettings.json`)

@@ -75,10 +75,10 @@ The frontend is organized into two main directories:
    - `npm install`
 3. Configure the backend URL used by the frontend:
    - Edit `public/appsettings.json` and set `apiBaseUrl` to your backend URL, for example:
-     - `{ "apiBaseUrl": "http://localhost:5297" }`
+     - `{ "apiBaseUrl": "http://localhost:10011" }`
 4. Start the web application:
    - `npm start`
-5. The app runs on `http://localhost:3000` and calls the backend using the URL from `appsettings.json`.
+5. The app runs on `http://localhost:10015` and calls the backend using the URL from `appsettings.json`.
 
 ## Frontend Updates
 
