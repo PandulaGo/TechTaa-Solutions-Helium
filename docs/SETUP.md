@@ -4,7 +4,7 @@
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| [.NET SDK](https://dotnet.microsoft.com/download) | 8.0+ | Backend API |
+| [.NET SDK](https://dotnet.microsoft.com/download) | 10.0+ | Backend API |
 | [Node.js](https://nodejs.org/) | 14+ | Frontend web app |
 | [npm](https://www.npmjs.com/) | 8+ | Package management |
 | [SQL Server LocalDB](https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/sql-server-express-localdb) | 2019+ | Local database (ships with Visual Studio) |
@@ -30,12 +30,12 @@ Navigate to `Backend/Helium.Api/appsettings.json`:
 ```json
 {
   "ConnectionStrings": {
-    "HeliumCoreConnection": "Server=(localdb)\\mssqllocaldb;Database=HeliumAppDb;Trusted_Connection=True;MultipleActiveResultSets=true"
+    "HeliumCoreConnection": "Server=localhost\\SQLEXPRESS;Database=helium_maindb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
   }
 }
 ```
 
-The default uses SQL Server LocalDB. Change if using a different SQL Server instance.
+The default uses SQL Server Express (`localhost\SQLEXPRESS`). For production, use User Secrets to avoid committing credentials.
 
 ### 2.2 JWT Secret
 
@@ -71,10 +71,10 @@ dotnet run --project Helium.Api/Helium.Api.csproj
 ```
 
 The API starts on:
-- `http://localhost:5297`
+- `http://localhost:50001`
 - `https://localhost:7165`
 
-To verify: visit `http://localhost:5297/api/Health` — should return `{"status":"ok"}`.
+To verify: visit `http://localhost:50001/api/health` — should return `{"status":"ok"}`.
 
 ---
 
@@ -93,7 +93,7 @@ Edit `public/appsettings.json`:
 
 ```json
 {
-  "apiBaseUrl": "http://localhost:5297"
+  "apiBaseUrl": "http://localhost:50001"
 }
 ```
 
@@ -105,7 +105,7 @@ Match the URL where the backend is running.
 npm start
 ```
 
-Opens at `http://localhost:3000`.
+Opens at `http://localhost:50005`.
 
 ---
 
@@ -132,8 +132,8 @@ Requires an emulator or physical device.
 
 ## 5. Verify Everything Works
 
-1. Backend is running → `http://localhost:5297/api/Health` returns ok
-2. Frontend is running → `http://localhost:3000` loads
+1. Backend is running → `http://localhost:50001/api/health` returns ok
+2. Frontend is running → `http://localhost:50005` loads
 3. Create an account via the Signup page
 4. Log in → redirected to Dashboard
 5. Add a vehicle → appears in Vehicles list
@@ -150,7 +150,7 @@ Requires an emulator or physical device.
 
 ### CORS error in browser
 - Ensure the backend URL in `public/appsettings.json` matches exactly (including port)
-- Backend CORS is configured to allow `http://localhost:3000` only
+- Backend CORS is configured to allow `http://localhost:50005` only
 
 ### JWT token expired
 - Tokens expire after 120 minutes (configurable in `appsettings.json`)
@@ -158,7 +158,7 @@ Requires an emulator or physical device.
 - No refresh token mechanism currently implemented
 
 ### `dotnet build` fails
-- Ensure .NET 8 SDK is installed: `dotnet --version`
+- Ensure .NET 10 SDK is installed: `dotnet --version`
 - Restore NuGet packages: `dotnet restore`
 
 ### `npm start` fails

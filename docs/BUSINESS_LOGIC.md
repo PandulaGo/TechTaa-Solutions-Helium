@@ -152,7 +152,7 @@ currentOdometer = max(
 
 ### 3.3 Energy Trend (`GetYearlyEnergyTrendAsync`)
 
-Returns monthly aggregated data for the line chart.
+Returns monthly aggregated data for line/trend charts.
 
 **Input:** Year, optional VehicleId (per-vehicle filter)
 
@@ -172,6 +172,10 @@ TotalUsage     = FuelVolumeLiters + EnergyConsumedKwh
 GrandTotalCost = FuelCost + ChargingCost + MaintenanceCost
 ```
 
+**Used by frontend for:**
+- **Cost Overview line chart**: Shows `fuelCost`, `chargingCost`, `maintenanceCost` as 3 separate lines
+- **Price per Liter trend**: Shows `fuelCost / fuelVolumeLiters` per month (line chart with hover tooltips)
+
 ### 3.4 Recent Activity (`GetRecentActivityAsync`)
 
 **Activity type mapping:**
@@ -189,57 +193,38 @@ Collects distinct years from `FuelEntry.Date`, `ChargingEntry.Date`, and `Mainte
 
 ---
 
-## 4. Fuel Efficiency Calculation (`ReportService.cs`)
+## 4. Fuel Efficiency Calculation
 
-### 4.1 Current Implementation (Known Limitation)
+### 4.1 Formula (Per-Fill-Up Average)
 
+**km/L (fuel efficiency):**
 ```csharp
-// CURRENT — issue for hybrid vehicles
-distance = max(all odometers) - min(all odometers)  // Mixes fuel + charging
-kmPerLiter = distance / totalFuelLiters
-kmPerKwh   = distance / totalKwh
-costPerKm  = totalCost / distance
+// For each consecutive pair of fuel entries:
+for (int i = 1; i < entries.Count; i++) {
+    tripDist  = entries[i].Odometer - entries[i-1].Odometer;  // km driven
+    tripLiters = entries[i].Liters;                            // liters added
+    if (tripDist > 0 && tripLiters > 0)
+        kmPerLiter = tripDist / tripLiters;  // this fill-up's efficiency
+}
+// Display: average of all per-fill-up km/L values
 ```
 
-### 4.2 Problem with Hybrids
+**km/kWh (electric efficiency):** Same per-charge-pair average approach.
 
-For a hybrid vehicle using both fuel and electricity:
-- The `distance` includes all kilometers driven (on both energy sources)
-- `kmPerLiter` divides the FULL distance by only fuel liters → **overstates** fuel efficiency
-- `kmPerKwh` divides the FULL distance by only kWh → **overstates** electric efficiency
-- Only `costPerKm` is correct for hybrids
-
-**Example:** Hybrid drives 1000 km, uses 40L fuel + 150 kWh.
-- Current: `kmPerLiter = 1000/40 = 25 km/L` (wrong — some km were electric)
-- Actual fuel distance might be only 600 km → true `kmPerLiter = 600/40 = 15 km/L`
-
-### 4.3 Proposed Corrected Logic
-
+**Cost/km:**
 ```csharp
-// Fuel efficiency — use only distance between fuel entries
-var fuelEntriesOrdered = fuelEntries.OrderBy(f => f.OdometerReadingKm).ToList();
-if (fuelEntriesOrdered.Count >= 2) {
-    var fuelDistance = fuelEntriesOrdered.Last().OdometerReadingKm
-                     - fuelEntriesOrdered.First().OdometerReadingKm;
-    var fuelLiters = fuelEntriesOrdered.Skip(1).Sum(f => f.Liters);
-    kmPerLiter = fuelDistance > 0 && fuelLiters > 0
-        ? fuelDistance / fuelLiters : null;
-}
-
-// Electric efficiency — use only distance between charging entries
-var chargingEntriesOrdered = chargingEntries.OrderBy(c => c.OdometerReadingKm).ToList();
-if (chargingEntriesOrdered.Count >= 2) {
-    var electricDistance = chargingEntriesOrdered.Last().OdometerReadingKm
-                         - chargingEntriesOrdered.First().OdometerReadingKm;
-    var kwhUsed = chargingEntriesOrdered.Skip(1).Sum(c => c.KwhUsed);
-    kmPerKwh = electricDistance > 0 && kwhUsed > 0
-        ? electricDistance / kwhUsed : null;
-}
-
-// Cost per km — correct for all vehicle types
-costPerKm = distance > 0 && totalCost > 0
-    ? totalCost / distance : null;
+costPerKm = totalCost / totalDistance
 ```
+
+### 4.2 Requires ≥ 2 entries
+
+You need at least 2 fuel/charging entries with different odometer readings to calculate efficiency. Each pair of consecutive entries produces one trip measurement.
+
+### 4.3 Hybrid Handling
+
+- **Fuel distance**: Uses only fuel entry odometer pairs — NOT total vehicle distance
+- **Electric distance**: Uses only charging entry odometer pairs
+- This prevents hybrids from getting inflated efficiency where battery-assisted km were attributed to fuel
 
 ---
 
@@ -416,4 +401,25 @@ Expires: DateTime.UtcNow + 120 minutes
 
 ---
 
-*Last updated: 2026-05-09*
+## 12. Dashboard Frontend Features
+
+| Section | Location | Data Source |
+|---------|----------|-------------|
+| **Action Buttons** | Top | Navigation links |
+| **Efficiency Cards** | Below actions | Per-vehicle km/L & km/kWh from `GetVehicleSummariesAsync` |
+| **Price per Liter Trend** | Below efficiency | `GetYearlyEnergyTrendAsync` → `fuelCost / fuelVolumeLiters` |
+| **Cost Overview Line Chart** | Below price trend | `GetYearlyEnergyTrendAsync` — 3 lines (fuel/charging/maintenance) |
+| **Fleet Snapshot** | Side-by-side with Maintenance | Vehicle summary table with Fuel/Charging/Maintenance cost columns |
+| **Maintenance Outlook** | Side-by-side with Fleet | Due/remaining reminders + spend + quick tips |
+| **Recent Activity** | Bottom | Latest 10 fuel/charging/maintenance entries |
+
+### 12.1 Sidebar
+
+- Collapsible: toggle between full `w-64` and minimal `w-14`
+- Navigation: Overview, Vehicles, Fuel Entries, Charging Entries, Maintenance
+- Footer: User name + red Logout button
+- `h-screen overflow-hidden` on parent keeps sidebar fixed to viewport
+
+---
+
+*Last updated: 2026-05-10*

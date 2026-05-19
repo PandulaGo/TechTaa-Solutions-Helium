@@ -23,6 +23,9 @@ interface VehicleSummaryDto {
   monthlyChargingCost: number;
   monthlyMaintenanceCost: number;
   monthlyCost: number;
+  kmPerLiter?: number | null;
+  kmPerKwh?: number | null;
+  costPerKm?: number | null;
   nextMaintenanceType?: string | null;
   nextMaintenanceDue?: string | null;
   workStatus: number;
@@ -85,6 +88,10 @@ const DashboardPage: React.FC = () => {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [chartHoveredMonth, setChartHoveredMonth] = useState<number | null>(null);
+  const [fuelTrendVehicleId, setFuelTrendVehicleId] = useState<string>('');
+  const [fuelTrendData, setFuelTrendData] = useState<EnergyTrendPoint[]>([]);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [fuelTrendHoveredPoint, setFuelTrendHoveredPoint] = useState<number | null>(null);
 
   const currency = user?.preferredCurrency || 'USD';
 
@@ -207,6 +214,35 @@ const DashboardPage: React.FC = () => {
       loadEnergyTrend();
     }
   }, [apiBaseUrl, selectedYear, selectedVehicleId]);
+
+  useEffect(() => {
+    const loadFuelTrend = async () => {
+      if (!apiBaseUrl) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const currentYear = new Date().getFullYear();
+        const params: Record<string, any> = { year: currentYear };
+        if (fuelTrendVehicleId) params.vehicleId = fuelTrendVehicleId;
+
+        const response = await axios.get<EnergyTrendPoint[]>(`${apiBaseUrl}/api/dashboard/energy-trend`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          params,
+        });
+
+        setFuelTrendData(response.data ?? []);
+      } catch (err) {
+        console.error('Failed to load fuel trend', err);
+      }
+    };
+
+    if (apiBaseUrl) {
+      loadFuelTrend();
+    }
+  }, [apiBaseUrl, fuelTrendVehicleId]);
 
   useEffect(() => {
     const loadAvailableYears = async () => {
@@ -487,37 +523,64 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-100">
-      <aside className="w-full md:w-64 bg-white shadow-md flex flex-col">
-        <div className="px-6 py-4 border-b">
-          <h1 className="text-xl font-bold text-blue-600">Helium Dashboard</h1>
-        </div>
-        <nav className="flex-1 px-4 py-4 space-y-2 text-sm">
-          <a href="/dashboard" className="block px-3 py-2 rounded-md bg-blue-50 text-blue-700 font-medium">Overview</a>
-          <a href="/vehicles" className="block px-3 py-2 rounded-md hover:bg-gray-100">Vehicles</a>
-          <a href="/fuel-entries" className="block px-3 py-2 rounded-md hover:bg-gray-100">Fuel Entries</a>
-          <a href="/charging-entries" className="block px-3 py-2 rounded-md hover:bg-gray-100">Charging Entries</a>
-          <a href="/maintenance-records" className="block px-3 py-2 rounded-md hover:bg-gray-100">Maintenance</a>
-          <span className="block px-3 py-2 rounded-md text-gray-400 cursor-not-allowed">Reports</span>
-        </nav>
-        <div className="px-4 py-4 border-t text-xs text-gray-500">
-          {user ? `${user.firstName} ${user.lastName}` : 'Loading user...'}
-        </div>
+    <div className="h-screen flex flex-col md:flex-row bg-gray-100 overflow-hidden">
+      <aside className={`${sidebarExpanded ? 'w-64' : 'w-14'} transition-all duration-200 bg-white shadow-md flex flex-col flex-shrink-0 overflow-hidden`}>
+        {sidebarExpanded ? (
+          <>
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h1 className="text-xl font-bold text-blue-600">Helium</h1>
+              <button
+                type="button"
+                onClick={() => setSidebarExpanded(false)}
+                className="h-7 w-7 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                aria-label="Collapse sidebar"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
+            </div>
+            <nav className="flex-1 px-4 py-4 space-y-2 text-sm">
+              <a href="/dashboard" className="block px-3 py-2 rounded-md bg-blue-50 text-blue-700 font-medium">Overview</a>
+              <a href="/vehicles" className="block px-3 py-2 rounded-md hover:bg-gray-100">Vehicles</a>
+              <a href="/fuel-entries" className="block px-3 py-2 rounded-md hover:bg-gray-100">Fuel Entries</a>
+              <a href="/charging-entries" className="block px-3 py-2 rounded-md hover:bg-gray-100">Charging Entries</a>
+              <a href="/maintenance-records" className="block px-3 py-2 rounded-md hover:bg-gray-100">Maintenance</a>
+              <span className="block px-3 py-2 rounded-md text-gray-400 cursor-not-allowed">Reports</span>
+            </nav>
+            <div className="px-4 py-3 border-t">
+              <p className="text-xs text-gray-500 mb-2">
+                {user ? `${user.firstName} ${user.lastName}` : 'Loading user...'}
+              </p>
+              <a
+                href="/login"
+                className="block text-center px-3 py-2 rounded-md bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition"
+              >
+                Log out
+              </a>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center py-4">
+            <button
+              type="button"
+              onClick={() => setSidebarExpanded(true)}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              aria-label="Expand sidebar"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
       </aside>
 
-      <main className="relative flex-1 p-4 md:p-8">
+      <main className="relative flex-1 p-4 md:p-8 overflow-y-auto">
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <div>
             <h2 className="text-2xl font-semibold text-gray-800">Overview</h2>
             <p className="text-sm text-gray-500">Welcome, {user?.firstName || 'User'}! ({currency})</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <a
-              href="/login"
-              className="text-sm text-red-600 hover:underline"
-            >
-              Log out
-            </a>
           </div>
         </header>
 
@@ -556,6 +619,136 @@ const DashboardPage: React.FC = () => {
             Add Maintenance
           </button>
         </div>
+
+        {/* Efficiency Cards */}
+        <section className="mb-6">
+          {vehicleSummaries.length === 0 ? (
+            <div className="text-center text-sm text-gray-500 py-4">
+              Add vehicles to see efficiency metrics.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {vehicleSummaries.map((v) => (
+                <div key={v.id} className="rounded-xl bg-white p-4 shadow border border-gray-100">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{v.name}</p>
+                  <p className="text-xs text-gray-500 capitalize">{v.powertrainType}</p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {v.kmPerLiter != null ? (
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600">
+                        ⛽ {v.kmPerLiter.toFixed(1)} km/L
+                      </span>
+                    ) : null}
+                    {v.kmPerKwh != null ? (
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
+                        ⚡ {v.kmPerKwh.toFixed(1)} km/kWh
+                      </span>
+                    ) : null}
+                    {v.kmPerLiter == null && v.kmPerKwh == null ? (
+                      <span className="text-xs text-gray-400">Not enough data</span>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Fuel Price per Liter Trend */}
+        <section className="mb-6 rounded-xl bg-white p-4 shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-600">Price per Liter</p>
+              <p className="text-xs text-gray-500">Monthly fuel price trend</p>
+            </div>
+            <select
+              value={fuelTrendVehicleId}
+              onChange={(e) => setFuelTrendVehicleId(e.target.value)}
+              className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
+            >
+              <option value="">All Vehicles</option>
+              {vehicleSummaries.map((v) => (
+                <option key={v.id} value={v.id}>{v.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {(() => {
+            const points = fuelTrendData.map((p) =>
+              p.fuelVolumeLiters > 0 ? p.fuelCost / p.fuelVolumeLiters : 0
+            );
+            const hasData = points.some((v) => v > 0);
+            if (!hasData) {
+              return <p className="text-sm text-gray-400 text-center py-8">No fuel costs logged this year.</p>;
+            }
+
+            const padding = { top: 12, right: 12, bottom: 12, left: 12 };
+            const viewHeight = 140;
+            const viewWidth = 600;
+            const chartH = viewHeight - padding.top - padding.bottom;
+            const chartW = viewWidth - padding.left - padding.right;
+            const valMax = Math.max(...points, 1);
+
+            const xScale = (i: number) => padding.left + (i / Math.max(points.length - 1, 1)) * chartW;
+            const yScale = (v: number) => padding.top + chartH - (v / valMax) * chartH;
+
+            const linePath = points
+              .map((v, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(v)}`)
+              .join(' ');
+
+            const handleFuelTrendMove = (e: React.MouseEvent<SVGSVGElement>) => {
+              const svg = e.currentTarget;
+              const rect = svg.getBoundingClientRect();
+              const mouseX = ((e.clientX - rect.left) / rect.width) * viewWidth;
+              const idx = points.reduce((best, _, i) =>
+                Math.abs(xScale(i) - mouseX) < Math.abs(xScale(best) - mouseX) ? i : best, 0);
+              setFuelTrendHoveredPoint(idx);
+            };
+
+            return (
+              <svg
+                viewBox={`0 0 ${viewWidth} ${viewHeight}`}
+                className="w-full"
+                style={{ height: viewHeight }}
+                onMouseMove={handleFuelTrendMove}
+                onMouseLeave={() => setFuelTrendHoveredPoint(null)}
+              >
+                <line x1={padding.left} y1={padding.top + chartH} x2={padding.left + chartW} y2={padding.top + chartH} stroke="#e5e7eb" strokeWidth="1" />
+                <path d={linePath} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+                {points.map((v, i) => (
+                  <circle key={i} cx={xScale(i)} cy={yScale(v)}
+                    r={fuelTrendHoveredPoint === i ? 5 : 3}
+                    fill="#f59e0b" stroke="white" strokeWidth="1.5"
+                  />
+                ))}
+                {fuelTrendHoveredPoint !== null && fuelTrendHoveredPoint < fuelTrendData.length && (
+                  <g>
+                    <line x1={xScale(fuelTrendHoveredPoint)} y1={padding.top + chartH} x2={xScale(fuelTrendHoveredPoint)} y2={padding.top} stroke="#9ca3af" strokeWidth="1" strokeDasharray="3,3" />
+                    <rect
+                      x={Math.max(padding.left, Math.min(xScale(fuelTrendHoveredPoint) - 56, viewWidth - 120))}
+                      y={padding.top - 2}
+                      width="112" height="32" rx="4"
+                      fill="white" stroke="#d1d5db" strokeWidth="1"
+                    />
+                    <text
+                      x={Math.max(padding.left + 56, Math.min(xScale(fuelTrendHoveredPoint), viewWidth - 56))}
+                      y={padding.top + 10} textAnchor="middle"
+                      className="text-[10px] fill-gray-500"
+                    >
+                      {fuelTrendData[fuelTrendHoveredPoint].monthLabel}
+                    </text>
+                    <text
+                      x={Math.max(padding.left + 56, Math.min(xScale(fuelTrendHoveredPoint), viewWidth - 56))}
+                      y={padding.top + 22} textAnchor="middle"
+                      className="text-[10px] font-semibold fill-gray-800"
+                    >
+                      {formatCurrency(points[fuelTrendHoveredPoint])}/L
+                    </text>
+                  </g>
+                )}
+              </svg>
+            );
+          })()}
+        </section>
 
         {/* Cost Overview Section */}
         <section className="mb-8 rounded-2xl bg-white p-4 shadow md:p-6">

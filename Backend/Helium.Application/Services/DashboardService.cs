@@ -258,6 +258,66 @@ public class DashboardService : IDashboardService
                 .Where(e => e.VehicleId == vehicle.Id && e.ServiceDate >= monthStart && e.ServiceDate <= monthEnd)
                 .Sum(e => e.Cost);
 
+            var vehicleFuelEntries = allFuelEntries
+                .Where(e => e.VehicleId == vehicle.Id)
+                .OrderBy(e => e.OdometerReadingKm)
+                .ToList();
+
+            var vehicleChargingEntries = allChargingEntries
+                .Where(e => e.VehicleId == vehicle.Id)
+                .OrderBy(e => e.OdometerReadingKm)
+                .ToList();
+
+            var isFuelCapable = vehicle.PowertrainType == PowertrainType.Petrol
+                || vehicle.PowertrainType == PowertrainType.Diesel
+                || vehicle.PowertrainType == PowertrainType.Hybrid;
+
+            var isEvCapable = vehicle.PowertrainType == PowertrainType.Hybrid
+                || vehicle.PowertrainType == PowertrainType.Electric;
+
+            decimal? kmPerLiter = null;
+            if (isFuelCapable && vehicleFuelEntries.Count >= 2)
+            {
+                var pairEfficiencies = new List<decimal>();
+                for (int i = 1; i < vehicleFuelEntries.Count; i++)
+                {
+                    var tripDist = vehicleFuelEntries[i].OdometerReadingKm - vehicleFuelEntries[i - 1].OdometerReadingKm;
+                    var tripLiters = vehicleFuelEntries[i].Liters;
+                    if (tripDist > 0 && tripLiters > 0)
+                        pairEfficiencies.Add(tripDist / tripLiters);
+                }
+
+                if (pairEfficiencies.Count > 0)
+                    kmPerLiter = Math.Round(pairEfficiencies.Average(), 1, MidpointRounding.AwayFromZero);
+            }
+
+            decimal? kmPerKwh = null;
+            if (isEvCapable && vehicleChargingEntries.Count >= 2)
+            {
+                var electricDistance = vehicleChargingEntries.Last().OdometerReadingKm
+                                     - vehicleChargingEntries.First().OdometerReadingKm;
+                var kwhUsed = vehicleChargingEntries.Skip(1).Sum(e => e.KwhUsed);
+                if (electricDistance > 0 && kwhUsed > 0)
+                    kmPerKwh = Math.Round(electricDistance / kwhUsed, 1, MidpointRounding.AwayFromZero);
+            }
+
+            decimal? costPerKm = null;
+            var totalLifetimeCost = allFuelEntries.Where(e => e.VehicleId == vehicle.Id).Sum(e => e.Cost)
+                + allChargingEntries.Where(e => e.VehicleId == vehicle.Id).Sum(e => e.Cost)
+                + allMaintenanceRecords.Where(e => e.VehicleId == vehicle.Id).Sum(e => e.Cost);
+
+            var allOdometers = vehicleFuelEntries.Select(e => e.OdometerReadingKm)
+                .Concat(vehicleChargingEntries.Select(e => e.OdometerReadingKm))
+                .Concat(allMaintenanceRecords.Where(e => e.VehicleId == vehicle.Id).Select(e => e.OdometerReadingKm))
+                .ToList();
+
+            if (allOdometers.Count >= 2 && totalLifetimeCost > 0)
+            {
+                var lifetimeDistance = allOdometers.Max() - allOdometers.Min();
+                if (lifetimeDistance > 0)
+                    costPerKm = Math.Round(totalLifetimeCost / lifetimeDistance, 2, MidpointRounding.AwayFromZero);
+            }
+
             var vehicleMaintenanceRecords = allMaintenanceRecords
                 .Where(e => e.VehicleId == vehicle.Id)
                 .OrderByDescending(e => e.OdometerReadingKm)
@@ -316,6 +376,9 @@ public class DashboardService : IDashboardService
                 MonthlyChargingCost = monthChargingCost,
                 MonthlyMaintenanceCost = monthMaintenanceCost,
                 MonthlyCost = Math.Round(monthFuelCost + monthChargingCost + monthMaintenanceCost, 2, MidpointRounding.AwayFromZero),
+                KmPerLiter = kmPerLiter,
+                KmPerKwh = kmPerKwh,
+                CostPerKm = costPerKm,
                 NextMaintenanceType = nextMaintenanceType,
                 NextMaintenanceDue = nextMaintenanceDue,
                 WorkStatus = workStatus

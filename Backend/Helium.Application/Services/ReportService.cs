@@ -16,21 +16,53 @@ public class ReportService : IReportService
 
     public async Task<VehicleEfficiencyDto> GetVehicleEfficiencyAsync(Guid vehicleId, CancellationToken cancellationToken = default)
     {
-        var fuelEntries = _unitOfWork.Repository<FuelEntry>().Query().Where(f => f.VehicleId == vehicleId).ToList();
-        var chargingEntries = _unitOfWork.Repository<ChargingEntry>().Query().Where(c => c.VehicleId == vehicleId).ToList();
-
-        var odometers = fuelEntries.Select(f => f.OdometerReadingKm)
-            .Concat(chargingEntries.Select(c => c.OdometerReadingKm))
+        var fuelEntries = _unitOfWork.Repository<FuelEntry>().Query()
+            .Where(f => f.VehicleId == vehicleId)
+            .OrderBy(f => f.OdometerReadingKm)
             .ToList();
 
-        var distance = odometers.Count >= 2 ? odometers.Max() - odometers.Min() : 0;
-        var totalFuelLiters = fuelEntries.Sum(f => f.Liters);
-        var totalKwh = chargingEntries.Sum(c => c.KwhUsed);
+        var chargingEntries = _unitOfWork.Repository<ChargingEntry>().Query()
+            .Where(c => c.VehicleId == vehicleId)
+            .OrderBy(c => c.OdometerReadingKm)
+            .ToList();
+
+        decimal? kmPerLiter = null;
+        if (fuelEntries.Count >= 2)
+        {
+            var pairEfficiencies = new List<decimal>();
+            for (int i = 1; i < fuelEntries.Count; i++)
+            {
+                var tripDist = fuelEntries[i].OdometerReadingKm - fuelEntries[i - 1].OdometerReadingKm;
+                var tripLiters = fuelEntries[i].Liters;
+                if (tripDist > 0 && tripLiters > 0)
+                    pairEfficiencies.Add(tripDist / tripLiters);
+            }
+
+            if (pairEfficiencies.Count > 0)
+                kmPerLiter = pairEfficiencies.Average();
+        }
+
+        decimal? kmPerKwh = null;
+        if (chargingEntries.Count >= 2)
+        {
+            var electricDistance = chargingEntries.Last().OdometerReadingKm - chargingEntries.First().OdometerReadingKm;
+            var kwhUsed = chargingEntries.Skip(1).Sum(c => c.KwhUsed);
+            if (electricDistance > 0 && kwhUsed > 0)
+                kmPerKwh = electricDistance / kwhUsed;
+        }
+
         var totalCost = fuelEntries.Sum(f => f.Cost) + chargingEntries.Sum(c => c.Cost);
 
-        var kmPerLiter = distance > 0 && totalFuelLiters > 0 ? distance / totalFuelLiters : (decimal?)null;
-        var kmPerKwh = distance > 0 && totalKwh > 0 ? distance / totalKwh : (decimal?)null;
-        var costPerKm = distance > 0 && totalCost > 0 ? totalCost / distance : (decimal?)null;
+        decimal? costPerKm = null;
+        if (fuelEntries.Count + chargingEntries.Count >= 2 && totalCost > 0)
+        {
+            var allOdometers = fuelEntries.Select(f => f.OdometerReadingKm)
+                .Concat(chargingEntries.Select(c => c.OdometerReadingKm))
+                .ToList();
+            var distance = allOdometers.Max() - allOdometers.Min();
+            if (distance > 0)
+                costPerKm = totalCost / distance;
+        }
 
         return await Task.FromResult(new VehicleEfficiencyDto
         {

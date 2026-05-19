@@ -17,10 +17,11 @@ This document captures planned features, value-add ideas, and improvements for t
 ## P0 — Critical UX Gaps
 
 ### 1. User Profile & Settings
-- **Backend:** `GET /api/users/me`, `PUT /api/users/me`, `PUT /api/users/me/password`
+- **Backend:** `GET /api/users/me` ✅, `PUT /api/users/me`, `PUT /api/users/me/password`
 - **Frontend:** Profile page with name, currency, avatar upload, password change form
-- **Why:** User's name is hardcoded as "Logged in sample user" in the sidebar. No way to update profile after registration.
-- **Effort:** Medium (3–5 endpoints + 1 page)
+- **Why:** User name now displays in sidebar via `/api/users/me`. Still no profile edit page.
+- **Effort:** Medium (2 endpoints + 1 page)
+- **Status:** Partially done (GET /me implemented, name + currency shown in dashboard)
 
 ### 2. Route Guard / Auth Context
 - React Context providing auth state (token, user info)
@@ -42,11 +43,12 @@ This document captures planned features, value-add ideas, and improvements for t
 - **Why:** Login page already links to `/forgot-password` which is a 404 today.
 - **Effort:** Medium (2 endpoints + 2 pages + email integration)
 
-### 5. Pagination in List Pages
+### 5. Pagination in List Pages ✅
 - Backend already supports `PaginationQuery`/`PagedResult<T>`
 - Frontend: add pagination controls (prev/next, page numbers, page size selector)
 - **Why:** All list pages hardcode `pageSize: 200` — breaks with real-world data.
 - **Effort:** Small (1 shared pagination component)
+- **Status:** Backend complete, frontend pending
 
 ---
 
@@ -72,13 +74,15 @@ This document captures planned features, value-add ideas, and improvements for t
 - **Why:** Families and small businesses need shared access to vehicle records.
 - **Effort:** Large (new entity relationships + permission system + UI)
 
-### 9. Advanced Analytics & Insights
-- Fuel price trends (cost/liter over time, per station)
+### 9. Advanced Analytics & Insights ✅ (in progress)
+- Fuel price trends (cost/liter over time, per station) ✅ — Price per Liter chart on dashboard
 - Carbon footprint estimation (kg CO2 per fuel/charge type)
-- Cost-per-km trends across all vehicles
+- Cost-per-km trends across all vehicles ✅ — efficiency cards on dashboard
 - Best/worst performing vehicles by efficiency
+- Fuel efficiency per vehicle (km/L & km/kWh) ✅ — efficiency cards
 - **Why:** Transforms Helium from a record-keeper into a proactive optimization tool.
 - **Effort:** Medium (new report endpoints + chart components)
+- **Status:** Efficiency cards + price per liter trend implemented. Remaining items: carbon footprint, best/worst vehicles.
 
 ### 10. Mobile App (Flutter)
 - Build out Flutter app with login, dashboard, vehicle list, entry creation
@@ -149,6 +153,12 @@ This document captures planned features, value-add ideas, and improvements for t
 
 ```
 Phase 1 (Quick Wins)
+├── User name/currency in dashboard ✅
+├── Efficiency cards (km/L, km/kWh) ✅
+├── Price per Liter trend chart ✅
+├── Collapsible sidebar ✅
+├── Maintenance search bar + expandable rows ✅
+├── Fleet Snapshot with cost breakdown (Fuel/Charging/Maintenance) ✅
 ├── Auth Context + Route Guard
 ├── Pagination Component
 ├── Dark Mode

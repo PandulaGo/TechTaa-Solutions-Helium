@@ -148,4 +148,41 @@ This document captures the rationale behind key technical decisions made during 
 
 ---
 
+## ADR-012: Per-Fill-Up Efficiency Calculation
+
+**Status:** Accepted  
+**Context:** The original efficiency formula used a lifetime average (`total distance / total liters`) which was inaccurate for hybrids and didn't reflect individual fill-up performance.  
+**Decision:** Calculate km/L as the average of each consecutive fill-up pair: `tripDist / tripLiters` for each `entries[i]` paired with `entries[i-1]`. Only includes pairs where both the previous and current entries have valid odometer readings and liters > 0. Requires ≥2 entries.  
+**Consequences:**
+- More accurate per-trip efficiency measurement
+- Partial fill-ups still skew results (future: add `IsFullTank` flag)
+- Same logic applies to km/kWh for EV charging entries
+- Hybrids get separate fuel and electric efficiency using only their respective entry types
+
+---
+
+## ADR-013: Collapsible Sidebar
+
+**Status:** Accepted  
+**Context:** The sidebar navigation consumed significant horizontal space on smaller screens.  
+**Decision:** Add a toggle button (double-chevron icon) in the sidebar header. When collapsed, sidebar shrinks from `w-64` to `w-14`, showing only the expand button. Smooth transition via `transition-all duration-200`.  
+**Consequences:**
+- More screen real estate for dashboard content when collapsed
+- Simple to implement (local `sidebarExpanded` state only)
+- No icon-only nav items in collapsed mode (keeps implementation simple)
+
+---
+
+## ADR-014: km/L over L/100km
+
+**Status:** Accepted  
+**Context:** Initially implemented as L/100km (European standard), but the user prefers km/L which is more intuitive for their use case.  
+**Decision:** Use km/L as the primary fuel efficiency metric. Displayed as `⛽ 16.9 km/L` on efficiency cards.  
+**Consequences:**
+- Higher = better (intuitive for most users)
+- Common in Asian and US markets
+- L/100km can be added as an alternative display option in the future
+
+---
+
 *This is a living document. Add new ADRs as decisions are made.*

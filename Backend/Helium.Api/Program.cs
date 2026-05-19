@@ -10,10 +10,6 @@ using Serilog;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 
-// ...existing code...
-
-// ...existing using statements...
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add CORS policy to allow frontend requests
@@ -21,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins("http://localhost:3000")
+            .WithOrigins("http://localhost:50005")
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
@@ -36,9 +32,6 @@ builder.Services.Configure<RouteOptions>(options =>
 });
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
-// Swagger temporarily disabled due to Swashbuckle type load issue on this runtime.
-// builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddSwaggerGen();
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -75,7 +68,7 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetService<Helium.Infrastructure.Persistence.AppDbContext>();
     if (dbContext != null)
     {
-        Console.WriteLine("Helium App | Applying database migrations...");
+        Console.WriteLine("🚀 Helium App | Applying database migrations...");
         dbContext.Database.Migrate();
     }
 }
@@ -89,6 +82,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-Console.WriteLine("Helium App | Service started successfully");
+app.MapGet("/", () => Results.Ok("Hello from Helium App — API is running."));
+
+var appLogger = app.Services.GetRequiredService<Serilog.ILogger>();
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var urls = app.Urls;
+    appLogger.Information("🚀 Helium App | Backend started on {Urls}", string.Join(", ", urls));
+    Console.WriteLine($"🚀 Helium App | Backend started on {string.Join(", ", urls)}");
+});
+
 app.Run();
 

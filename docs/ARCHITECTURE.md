@@ -61,7 +61,7 @@ ASP.NET Core Web API. Depends on Application + Infrastructure.
 
 | Component | Contents |
 |-----------|----------|
-| Controllers | `AuthController`, `VehiclesController`, `FuelEntriesController`, `ChargingEntriesController`, `MaintenanceRecordsController`, `ReportsController`, `DashboardController`, `FilesController` |
+| Controllers | `AuthController`, `VehiclesController`, `FuelEntriesController`, `ChargingEntriesController`, `MaintenanceRecordsController`, `ReportsController`, `DashboardController`, `FilesController`, `UsersController` |
 | Middleware | Global `ExceptionHandlingMiddleware` (404/401/400/500 mapping) |
 | Background Services | `MaintenanceReminderBackgroundService` (runs every 6 hours) |
 | Configuration | `appsettings.json` — connection string, JWT settings, Serilog |
@@ -84,11 +84,11 @@ graph LR
 ```
 
 ### Web App (React 17 + TypeScript + Tailwind CSS)
-- **Routing**: React Router v5 with `Switch` — 14 routes (home, login, signup, dashboard, 11 CRUD pages)
-- **HTTP**: Axios with JWT Bearer token from localStorage
+- **Routing**: React Router v5 with `HashRouter` — 14 routes (dashboard, vehicles, fuel/charging/maintenance entries, login, signup)
 - **State**: Local component state (no Redux/Zustand)
 - **Styling**: Tailwind CSS exclusively (Bootstrap removed)
-- **Pages**: Home, Login, Signup, Dashboard, Vehicles (list/create/edit), Fuel Entries (list/create/edit), Charging Entries (list/create/edit), Maintenance Records (list/create/edit)
+- **Layout**: Collapsible sidebar (expand/collapse toggle), sticky viewport-locked navigation, scrollable main content area
+- **Dashboard Sections**: Action buttons, efficiency cards (km/L & km/kWh per vehicle), price per liter trend chart (with hover tooltips), cost overview line chart, fleet snapshot table, maintenance outlook, recent activity feed
 
 ### Mobile App (Flutter)
 - Scaffolded only — Android + iOS project files, `pubspec.yaml`, no application code yet
@@ -106,9 +106,9 @@ User Action → React Page → Axios (JWT) → Helium.Api Controller
 
 | Layer | Technology | Version |
 |-------|------------|---------|
-| Backend Framework | ASP.NET Core | 8.0 |
-| ORM | Entity Framework Core | 8.x |
-| Database | SQL Server (LocalDB dev) | LocalDB |
+| Backend Framework | ASP.NET Core | 10.0 |
+| ORM | Entity Framework Core | 10.x |
+| Database | SQL Server Express | localhost\SQLEXPRESS |
 | Auth | JWT (HMAC-SHA256) | Custom |
 | Validation | FluentValidation | Latest |
 | Mapping | AutoMapper | Latest |

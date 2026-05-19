@@ -4,17 +4,26 @@ import App from './App';
 // Removed bootstrap imports. Tailwind CSS is used instead.
 import './index.css';
 
-const apiBaseUrl = process.env.REACT_APP_API_BASE_URL ?? 'http://localhost:5297';
+fetch('/appsettings.json')
+  .then(response => response.json())
+  .then((settings: { apiBaseUrl: string }) => {
+    const apiBaseUrl = settings.apiBaseUrl;
 
-fetch(`${apiBaseUrl}/api/health`)
-  .then(response => {
-    if (response.ok) {
-      // Backend is reachable; print hello in the web console
-      console.log('hello');
-    }
+    return fetch(`${apiBaseUrl}/api/health`)
+      .then(response => {
+        if (response.ok) {
+          console.log(`🚀 Helium App | Frontend running at ${window.location.origin}`);
+          console.log(`🚀 Helium App | Backend connected at ${apiBaseUrl}`);
+        }
+      })
+      .catch(() => {
+        console.log(`🚀 Helium App | Frontend running at ${window.location.origin}`);
+        console.log(`⚠️ Helium App | Backend not reachable at ${apiBaseUrl}`);
+      });
   })
   .catch(() => {
-    // Ignore errors here; backend might not be up yet
+    console.log(`🚀 Helium App | Frontend running at ${window.location.origin}`);
+    console.log('⚠️ Helium App | Could not load appsettings.json');
   });
 
 ReactDOM.render(
