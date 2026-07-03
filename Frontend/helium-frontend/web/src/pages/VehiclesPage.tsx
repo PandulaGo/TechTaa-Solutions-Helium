@@ -178,64 +178,64 @@ const VehiclesPage: React.FC = () => {
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+        <div className="overflow-hidden">
+          <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Body</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Powertrain</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Make / Model</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VIN</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Body</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Powertrain</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Make / Model</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VIN</th>
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-3 py-6 text-center text-sm text-gray-500">
                     Loading vehicles...
                   </td>
                 </tr>
               ) : vehicles.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-3 py-6 text-center text-sm text-gray-500">
                     No vehicles found. Start by adding your first vehicle.
                   </td>
                 </tr>
               ) : (
                 vehicles.map((vehicle) => (
                   <tr key={vehicle.id}>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{vehicle.name}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-3 py-3 text-sm text-gray-900">{vehicle.name}</td>
+                    <td className="px-3 py-3 text-sm text-gray-600">
                       {bodyTypeLabels[vehicle.bodyType] ?? 'Unknown'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-3 py-3 text-sm text-gray-600">
                       {powertrainLabels[vehicle.powertrainType] ?? 'Unknown'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-3 py-3 text-sm text-gray-600">
                       {vehicle.make} {vehicle.model}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-3 py-3 text-sm text-gray-600">
                       {vehicle.year ?? '—'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-3 py-3 text-sm text-gray-600 truncate max-w-[120px]">
                       {vehicle.vin ?? '—'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
-                      <div className="inline-flex items-center gap-2">
+                    <td className="px-3 py-3 text-right text-sm">
+                      <div className="inline-flex items-center gap-1">
                         <button
                           type="button"
                           onClick={() => handleUpdate(vehicle.id)}
-                          className="rounded-md border border-transparent bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                          className="rounded-md border border-transparent bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
                         >
                           Update
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(vehicle.id)}
-                          className="rounded-md border border-transparent bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+                          className="rounded-md border border-transparent bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                         >
                           Delete
                         </button>

@@ -353,32 +353,32 @@ const MaintenanceEntriesPage: React.FC = () => {
           )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+        <div className="overflow-hidden">
+          <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-2 py-3 w-8"></th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Odometer</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Due</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reminder</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Odometer</th>
+                <th className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Due</th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reminder</th>
+                <th className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loadingEntries ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={10} className="px-2 py-6 text-center text-sm text-gray-500">
                     Loading maintenance records...
                   </td>
                 </tr>
               ) : filteredEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={10} className="px-2 py-6 text-center text-sm text-gray-500">
                     No maintenance records recorded yet.
                   </td>
                 </tr>
@@ -406,14 +406,14 @@ const MaintenanceEntriesPage: React.FC = () => {
                             </svg>
                           </button>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                        <td className="px-2 py-3 text-sm">
                           <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700">
                             {record.vehicleVin?.toUpperCase() || 'N/A'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{record.serviceDate}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{record.maintenanceType}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                        <td className="px-2 py-3 text-sm text-gray-900">{record.serviceDate}</td>
+                        <td className="px-2 py-3 text-sm text-gray-700 truncate max-w-[120px]">{record.maintenanceType}</td>
+                        <td className="px-2 py-3 text-sm text-gray-600">
                           <div className="inline-flex items-center gap-1">
                             {record.odometerReadingKm.toLocaleString()} km
                             {groupCount > 1 && (
@@ -426,24 +426,24 @@ const MaintenanceEntriesPage: React.FC = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                        <td className="px-2 py-3 text-sm text-right text-gray-900">
                           {record.cost > 0 ? `$${record.cost.toFixed(2)}` : '—'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${wstatus.color}`}>
+                        <td className="px-2 py-3 text-sm">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${wstatus.color}`}>
                             {wstatus.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{renderNextDue(record)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">{statusBadge(record)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
-                          <div className="inline-flex items-center gap-2">
+                        <td className="px-2 py-3 text-sm text-gray-600">{renderNextDue(record)}</td>
+                        <td className="px-2 py-3 text-sm">{statusBadge(record)}</td>
+                        <td className="px-2 py-3 text-right text-sm">
+                          <div className="inline-flex items-center gap-1">
                             {record.receiptImagePath && (
                               <a
                                 href={record.receiptImagePath}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="rounded-md border border-transparent bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                                className="rounded-md border border-transparent bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100"
                               >
                                 Receipt
                               </a>
@@ -451,14 +451,14 @@ const MaintenanceEntriesPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleUpdate(record.id)}
-                              className="rounded-md border border-transparent bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                              className="rounded-md border border-transparent bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
                             >
                               Update
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDelete(record.id)}
-                              className="rounded-md border border-transparent bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+                              className="rounded-md border border-transparent bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
                             >
                               Delete
                             </button>
@@ -467,7 +467,7 @@ const MaintenanceEntriesPage: React.FC = () => {
                       </tr>
                       {isExpanded && (
                         <tr>
-                          <td colSpan={10} className="px-4 py-4 bg-gray-50">
+                          <td colSpan={10} className="px-2 py-4 bg-gray-50">
                             <div className="space-y-3">
                               {record.notes && (
                                 <div>

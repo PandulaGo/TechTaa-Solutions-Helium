@@ -144,6 +144,18 @@ public class DashboardService : IDashboardService
                 group => group.Key,
                 group => group.Sum(e => e.Cost));
 
+        var fuelOdometerByMonth = fuelEntries
+            .GroupBy(entry => entry.Date.Month)
+            .ToDictionary(
+                group => group.Key,
+                group => new OdometerRange { Min = group.Min(e => e.OdometerReadingKm), Max = group.Max(e => e.OdometerReadingKm) });
+
+        var chargingOdometerByMonth = chargingEntries
+            .GroupBy(entry => entry.Date.Month)
+            .ToDictionary(
+                group => group.Key,
+                group => new OdometerRange { Min = group.Min(e => e.OdometerReadingKm), Max = group.Max(e => e.OdometerReadingKm) });
+
         var monthNames = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames;
         var points = new List<EnergyTrendPointDto>(12);
 
@@ -165,11 +177,26 @@ public class DashboardService : IDashboardService
                 ChargingCost = chargingSnapshot is null ? 0 : Decimal.Round(chargingSnapshot.Cost, 2, MidpointRounding.AwayFromZero),
                 FuelVolumeLiters = fuelSnapshot?.Volume ?? 0,
                 EnergyConsumedKwh = chargingSnapshot?.Energy ?? 0,
-                MaintenanceCost = maintenanceCost > 0 ? Decimal.Round(maintenanceCost, 2, MidpointRounding.AwayFromZero) : 0
+                MaintenanceCost = maintenanceCost > 0 ? Decimal.Round(maintenanceCost, 2, MidpointRounding.AwayFromZero) : 0,
+                DistanceKm = CalculateMonthlyDistance(month, fuelOdometerByMonth, chargingOdometerByMonth)
             });
         }
 
         return Task.FromResult<IReadOnlyList<EnergyTrendPointDto>>(points);
+    }
+
+    private static int CalculateMonthlyDistance(
+        int month,
+        Dictionary<int, OdometerRange> fuelOdometerByMonth,
+        Dictionary<int, OdometerRange> chargingOdometerByMonth)
+    {
+        fuelOdometerByMonth.TryGetValue(month, out var fuelOdo);
+        chargingOdometerByMonth.TryGetValue(month, out var chargingOdo);
+
+        var fuelDist = fuelOdo != null ? fuelOdo.Max - fuelOdo.Min : 0;
+        var chargingDist = chargingOdo != null ? chargingOdo.Max - chargingOdo.Min : 0;
+
+        return Math.Max(fuelDist, chargingDist);
     }
 
     public Task<IReadOnlyList<int>> GetAvailableYearsAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -526,9 +553,15 @@ public class DashboardService : IDashboardService
 
         return new MaintenanceSummaryDto
         {
-            DueThisMonth = due,
-            RemainingThisMonth = remaining,
-            TotalCost = Math.Round(totalCost, 2, MidpointRounding.AwayFromZero)
-        };
-    }
+        DueThisMonth = due,
+        RemainingThisMonth = remaining,
+        TotalCost = Math.Round(totalCost, 2, MidpointRounding.AwayFromZero)
+    };
+}
+
+internal class OdometerRange
+{
+    public int Min { get; set; }
+    public int Max { get; set; }
+}
 }

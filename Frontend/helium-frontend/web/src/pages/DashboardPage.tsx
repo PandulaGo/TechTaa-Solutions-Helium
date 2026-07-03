@@ -71,6 +71,7 @@ interface EnergyTrendPoint {
   totalCost: number;
   totalUsage: number;
   grandTotalCost: number;
+  distanceKm: number;
 }
 
 const DashboardPage: React.FC = () => {
@@ -92,6 +93,7 @@ const DashboardPage: React.FC = () => {
   const [fuelTrendData, setFuelTrendData] = useState<EnergyTrendPoint[]>([]);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [fuelTrendHoveredPoint, setFuelTrendHoveredPoint] = useState<number | null>(null);
+  const [efficiencyVehicleId, setEfficiencyVehicleId] = useState<string>('');
 
   const currency = user?.preferredCurrency || 'USD';
 
@@ -390,8 +392,8 @@ const DashboardPage: React.FC = () => {
 
   const renderLineChart = () => {
     const chartWidth = 800;
-    const chartHeight = 300;
-    const padding = { top: 20, right: 30, bottom: 40, left: 60 };
+    const chartHeight = 130;
+    const padding = { top: 10, right: 20, bottom: 25, left: 45 };
     const innerWidth = chartWidth - padding.left - padding.right;
     const innerHeight = chartHeight - padding.top - padding.bottom;
 
@@ -434,51 +436,54 @@ const DashboardPage: React.FC = () => {
         >
           {yGridLines.map((v) => (
             <g key={v}>
-              <line x1={padding.left} y1={yScale(v)} x2={chartWidth - padding.right} y2={yScale(v)} stroke="#e5e7eb" strokeWidth="1" />
-              <text x={padding.left - 8} y={yScale(v) + 4} textAnchor="end" className="text-[10px] fill-gray-400">
+              <line x1={padding.left} y1={yScale(v)} x2={chartWidth - padding.right} y2={yScale(v)} stroke="#e5e7eb" strokeWidth="0.5" />
+              <text x={padding.left - 6} y={yScale(v) + 3} textAnchor="end" fill="#9ca3af" fontSize="5">
                 {formatCurrency(v)}
               </text>
             </g>
           ))}
 
           {energyTrend.map((_, i) => (
-            <text key={i} x={xScale(i)} y={chartHeight - 8} textAnchor="middle" className="text-[10px] fill-gray-500 font-medium">
+            <text key={i} x={xScale(i)} y={chartHeight - 6} textAnchor="middle" fill="#6b7280" fontWeight="500" fontSize="5">
               {energyTrend[i].monthLabel}
             </text>
           ))}
 
-          <line x1={padding.left} y1={padding.top} x2={padding.left} y2={chartHeight - padding.bottom} stroke="#d1d5db" strokeWidth="1" />
-          <line x1={padding.left} y1={chartHeight - padding.bottom} x2={chartWidth - padding.right} y2={chartHeight - padding.bottom} stroke="#d1d5db" strokeWidth="1" />
+          <line x1={padding.left} y1={padding.top} x2={padding.left} y2={chartHeight - padding.bottom} stroke="#d1d5db" strokeWidth="0.5" />
+          <line x1={padding.left} y1={chartHeight - padding.bottom} x2={chartWidth - padding.right} y2={chartHeight - padding.bottom} stroke="#d1d5db" strokeWidth="0.5" />
 
-          <path d={energyPath} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-          <path d={chargingPath} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-          <path d={maintPath} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+          <path d={energyPath} fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+          <path d={chargingPath} fill="none" stroke="#22c55e" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+          <path d={maintPath} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
 
           {energyCosts.map((v, i) => (
-            <circle key={`e-${i}`} cx={xScale(i)} cy={yScale(v)} r={chartHoveredMonth === i ? 5 : 3} fill="#3b82f6" stroke="white" strokeWidth="1.5" />
+            <circle key={`e-${i}`} cx={xScale(i)} cy={yScale(v)} r={chartHoveredMonth === i ? 3.5 : 2} fill="#3b82f6" stroke="white" strokeWidth="1" />
           ))}
           {chargingCosts.map((v, i) => (
-            <circle key={`c-${i}`} cx={xScale(i)} cy={yScale(v)} r={chartHoveredMonth === i ? 5 : 3} fill="#22c55e" stroke="white" strokeWidth="1.5" />
+            <circle key={`c-${i}`} cx={xScale(i)} cy={yScale(v)} r={chartHoveredMonth === i ? 3.5 : 2} fill="#22c55e" stroke="white" strokeWidth="1" />
           ))}
           {maintCosts.map((v, i) => (
-            <circle key={`m-${i}`} cx={xScale(i)} cy={yScale(v)} r={chartHoveredMonth === i ? 5 : 3} fill="#f59e0b" stroke="white" strokeWidth="1.5" />
+            <circle key={`m-${i}`} cx={xScale(i)} cy={yScale(v)} r={chartHoveredMonth === i ? 3.5 : 2} fill="#f59e0b" stroke="white" strokeWidth="1" />
           ))}
 
           {chartHoveredMonth !== null && chartHoveredMonth < energyTrend.length && (
             <>
-              <line x1={xScale(chartHoveredMonth)} y1={padding.top} x2={xScale(chartHoveredMonth)} y2={chartHeight - padding.bottom} stroke="#9ca3af" strokeWidth="1" strokeDasharray="4 2" />
-              <rect x={Math.min(xScale(chartHoveredMonth) - 70, chartWidth - padding.right - 150)} y={8} width={150} height={56} rx={6} fill="white" stroke="#e5e7eb" strokeWidth="1" />
-              <text x={Math.min(xScale(chartHoveredMonth) - 62, chartWidth - padding.right - 142)} y={24} className="text-[11px] fill-gray-700 font-semibold">
+              <line x1={xScale(chartHoveredMonth)} y1={padding.top} x2={xScale(chartHoveredMonth)} y2={chartHeight - padding.bottom} stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="3 2" />
+              <rect x={Math.min(xScale(chartHoveredMonth) - 50, chartWidth - padding.right - 110)} y={4} width={110} height={34} rx={3} fill="white" stroke="#e5e7eb" strokeWidth="0.5" />
+              <text x={Math.min(xScale(chartHoveredMonth) - 44, chartWidth - padding.right - 104)} y={11} fill="#374151" fontWeight="600" fontSize="4" className="font-sans">
                 {energyTrend[chartHoveredMonth].monthLabel} {selectedYear}
               </text>
-              <text x={Math.min(xScale(chartHoveredMonth) - 62, chartWidth - padding.right - 142)} y={38} className="text-[10px] fill-blue-500">
+              <text x={Math.min(xScale(chartHoveredMonth) - 44, chartWidth - padding.right - 104)} y={17} fill="#3b82f6" fontSize="4" className="font-sans">
                 Fuel: {formatCurrency(energyCosts[chartHoveredMonth])}
               </text>
-              <text x={Math.min(xScale(chartHoveredMonth) - 62, chartWidth - padding.right - 142)} y={52} className="text-[10px] fill-green-500">
-                Charging: {formatCurrency(chargingCosts[chartHoveredMonth])}
+              <text x={Math.min(xScale(chartHoveredMonth) - 44, chartWidth - padding.right - 104)} y={23} fill="#22c55e" fontSize="4" className="font-sans">
+                Charge: {formatCurrency(chargingCosts[chartHoveredMonth])}
               </text>
-              <text x={Math.min(xScale(chartHoveredMonth) - 62, chartWidth - padding.right - 142)} y={66} className="text-[10px] fill-amber-500">
-                Maintenance: {formatCurrency(maintCosts[chartHoveredMonth])}
+              <text x={Math.min(xScale(chartHoveredMonth) - 44, chartWidth - padding.right - 104)} y={29} fill="#f59e0b" fontSize="4" className="font-sans">
+                Maint: {formatCurrency(maintCosts[chartHoveredMonth])}
+              </text>
+              <text x={Math.min(xScale(chartHoveredMonth) - 44, chartWidth - padding.right - 104)} y={35} fill="#a855f7" fontSize="4" className="font-sans">
+                Dist: {formatNumber(energyTrend[chartHoveredMonth].distanceKm)}km
               </text>
             </>
           )}
@@ -620,142 +625,12 @@ const DashboardPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Efficiency Cards */}
-        <section className="mb-6">
-          {vehicleSummaries.length === 0 ? (
-            <div className="text-center text-sm text-gray-500 py-4">
-              Add vehicles to see efficiency metrics.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {vehicleSummaries.map((v) => (
-                <div key={v.id} className="rounded-xl bg-white p-4 shadow border border-gray-100">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{v.name}</p>
-                  <p className="text-xs text-gray-500 capitalize">{v.powertrainType}</p>
-                  <div className="mt-3 flex flex-wrap gap-3">
-                    {v.kmPerLiter != null ? (
-                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600">
-                        ⛽ {v.kmPerLiter.toFixed(1)} km/L
-                      </span>
-                    ) : null}
-                    {v.kmPerKwh != null ? (
-                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
-                        ⚡ {v.kmPerKwh.toFixed(1)} km/kWh
-                      </span>
-                    ) : null}
-                    {v.kmPerLiter == null && v.kmPerKwh == null ? (
-                      <span className="text-xs text-gray-400">Not enough data</span>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Fuel Price per Liter Trend */}
-        <section className="mb-6 rounded-xl bg-white p-4 shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-amber-600">Price per Liter</p>
-              <p className="text-xs text-gray-500">Monthly fuel price trend</p>
-            </div>
-            <select
-              value={fuelTrendVehicleId}
-              onChange={(e) => setFuelTrendVehicleId(e.target.value)}
-              className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
-            >
-              <option value="">All Vehicles</option>
-              {vehicleSummaries.map((v) => (
-                <option key={v.id} value={v.id}>{v.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {(() => {
-            const points = fuelTrendData.map((p) =>
-              p.fuelVolumeLiters > 0 ? p.fuelCost / p.fuelVolumeLiters : 0
-            );
-            const hasData = points.some((v) => v > 0);
-            if (!hasData) {
-              return <p className="text-sm text-gray-400 text-center py-8">No fuel costs logged this year.</p>;
-            }
-
-            const padding = { top: 12, right: 12, bottom: 12, left: 12 };
-            const viewHeight = 140;
-            const viewWidth = 600;
-            const chartH = viewHeight - padding.top - padding.bottom;
-            const chartW = viewWidth - padding.left - padding.right;
-            const valMax = Math.max(...points, 1);
-
-            const xScale = (i: number) => padding.left + (i / Math.max(points.length - 1, 1)) * chartW;
-            const yScale = (v: number) => padding.top + chartH - (v / valMax) * chartH;
-
-            const linePath = points
-              .map((v, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(v)}`)
-              .join(' ');
-
-            const handleFuelTrendMove = (e: React.MouseEvent<SVGSVGElement>) => {
-              const svg = e.currentTarget;
-              const rect = svg.getBoundingClientRect();
-              const mouseX = ((e.clientX - rect.left) / rect.width) * viewWidth;
-              const idx = points.reduce((best, _, i) =>
-                Math.abs(xScale(i) - mouseX) < Math.abs(xScale(best) - mouseX) ? i : best, 0);
-              setFuelTrendHoveredPoint(idx);
-            };
-
-            return (
-              <svg
-                viewBox={`0 0 ${viewWidth} ${viewHeight}`}
-                className="w-full"
-                style={{ height: viewHeight }}
-                onMouseMove={handleFuelTrendMove}
-                onMouseLeave={() => setFuelTrendHoveredPoint(null)}
-              >
-                <line x1={padding.left} y1={padding.top + chartH} x2={padding.left + chartW} y2={padding.top + chartH} stroke="#e5e7eb" strokeWidth="1" />
-                <path d={linePath} fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-                {points.map((v, i) => (
-                  <circle key={i} cx={xScale(i)} cy={yScale(v)}
-                    r={fuelTrendHoveredPoint === i ? 5 : 3}
-                    fill="#f59e0b" stroke="white" strokeWidth="1.5"
-                  />
-                ))}
-                {fuelTrendHoveredPoint !== null && fuelTrendHoveredPoint < fuelTrendData.length && (
-                  <g>
-                    <line x1={xScale(fuelTrendHoveredPoint)} y1={padding.top + chartH} x2={xScale(fuelTrendHoveredPoint)} y2={padding.top} stroke="#9ca3af" strokeWidth="1" strokeDasharray="3,3" />
-                    <rect
-                      x={Math.max(padding.left, Math.min(xScale(fuelTrendHoveredPoint) - 56, viewWidth - 120))}
-                      y={padding.top - 2}
-                      width="112" height="32" rx="4"
-                      fill="white" stroke="#d1d5db" strokeWidth="1"
-                    />
-                    <text
-                      x={Math.max(padding.left + 56, Math.min(xScale(fuelTrendHoveredPoint), viewWidth - 56))}
-                      y={padding.top + 10} textAnchor="middle"
-                      className="text-[10px] fill-gray-500"
-                    >
-                      {fuelTrendData[fuelTrendHoveredPoint].monthLabel}
-                    </text>
-                    <text
-                      x={Math.max(padding.left + 56, Math.min(xScale(fuelTrendHoveredPoint), viewWidth - 56))}
-                      y={padding.top + 22} textAnchor="middle"
-                      className="text-[10px] font-semibold fill-gray-800"
-                    >
-                      {formatCurrency(points[fuelTrendHoveredPoint])}/L
-                    </text>
-                  </g>
-                )}
-              </svg>
-            );
-          })()}
-        </section>
-
-        {/* Cost Overview Section */}
-        <section className="mb-8 rounded-2xl bg-white p-4 shadow md:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+        {/* Cost Overview - Full Row */}
+        <section className="rounded-xl bg-white p-3 shadow mb-6">
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Cost Overview</p>
-              <p className="text-sm text-gray-500">Monthly energy and maintenance costs</p>
+              <p className="text-xs text-gray-500">Monthly energy and maintenance costs</p>
             </div>
             <div className="flex items-center gap-3">
               <select
@@ -781,85 +656,72 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {trendError && (
-            <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+            <div className="mt-2 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
               {trendError}
             </div>
           )}
 
           {trendLoading ? (
-            <div className="mt-4 h-56 w-full animate-pulse rounded-2xl bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100" />
+            <div className="mt-2 h-32 w-full animate-pulse rounded-xl bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100" />
           ) : hasTrendPoints ? (
             <>
               {renderLineChart()}
               {!energyTrendHasActivity && (
-                <p className="mt-4 text-center text-xs text-gray-500">No costs logged for {selectedYear} yet.</p>
+                <p className="mt-2 text-center text-xs text-gray-500">No costs logged for {selectedYear} yet.</p>
               )}
             </>
           ) : (
-            <div className="mt-4 rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500">
+            <div className="mt-2 rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-500">
               No cost history recorded for {selectedYear} yet.
             </div>
           )}
 
-          <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-600">
+          <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-gray-600">
             {trendLegend.map((legend) => (
               <span key={legend.key} className="inline-flex items-center gap-2">
-                <span className={`h-2.5 w-2.5 rounded-full ${legend.color}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full ${legend.color}`} />
                 {legend.label}
               </span>
             ))}
           </div>
         </section>
 
-        {/* Fleet Snapshot + Maintenance Outlook Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {/* Fleet Snapshot */}
-          <section className="rounded-2xl bg-white p-4 shadow md:p-6">
-            <div className="mb-4">
+        {/* Fleet Snapshot + Maintenance Outlook + Price per Liter */}
+        <div className="grid grid-cols-12 gap-4 mb-6">
+          {/* Fleet Snapshot - 7 columns */}
+          <section className="col-span-12 lg:col-span-7 rounded-xl bg-white p-4 shadow">
+            <div className="mb-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Fleet Snapshot</p>
-              <p className="text-sm text-gray-500">Per-vehicle overview for {monthLabel}</p>
+              <p className="text-xs text-gray-500">Per-vehicle overview for {monthLabel}</p>
             </div>
 
-            <div className="mt-4 overflow-x-auto">
+            <div className="overflow-x-auto">
               {vehicleSummaries.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-500">
-                  No vehicles added yet. Add a vehicle to see its summary here.
+                <div className="rounded-xl border border-dashed border-gray-200 py-6 text-center text-xs text-gray-500">
+                  No vehicles added yet.
                 </div>
               ) : (
-                <table className="min-w-full text-sm">
+                <table className="min-w-full text-xs">
                   <thead>
                     <tr className="border-b border-gray-100">
-                      <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Vehicle</th>
-                      <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Type</th>
-                      <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Odometer</th>
-                      <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Fuel</th>
-                      <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Charging</th>
-                      <th className="text-right py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Maintenance</th>
-                      <th className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Next Maintenance</th>
-                      <th className="text-center py-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Vehicle</th>
+                      <th className="text-right py-1.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Odometer</th>
+                      <th className="text-right py-1.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Fuel</th>
+                      <th className="text-right py-1.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Charge</th>
+                      <th className="text-right py-1.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Maint</th>
+                      <th className="text-center py-1.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {vehicleSummaries.map((v) => (
                       <tr key={v.id} className="border-b border-gray-50 hover:bg-gray-50">
-                        <td className="py-3 px-3 font-medium text-gray-900">{v.name}</td>
-                        <td className="py-3 px-3 text-gray-600">{v.powertrainType}</td>
-                        <td className="py-3 px-3 text-right text-gray-600">{formatNumber(v.currentOdometerKm)} km</td>
-                        <td className="py-3 px-3 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyFuelCost)}</td>
-                        <td className="py-3 px-3 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyChargingCost)}</td>
-                        <td className="py-3 px-3 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyMaintenanceCost)}</td>
-                        <td className="py-3 px-3 text-gray-600">
-                          {v.nextMaintenanceType ? (
-                            <span>
-                              {v.nextMaintenanceType}
-                              {v.nextMaintenanceDue ? <span className="text-xs text-gray-400 ml-1">({v.nextMaintenanceDue})</span> : null}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${getWorkStatusColor(v.workStatus)}`}>
+                        <td className="py-2 px-2 font-medium text-gray-900">{v.name}</td>
+                        <td className="py-2 px-2 text-right text-gray-600">{formatNumber(v.currentOdometerKm)}</td>
+                        <td className="py-2 px-2 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyFuelCost)}</td>
+                        <td className="py-2 px-2 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyChargingCost)}</td>
+                        <td className="py-2 px-2 text-right font-semibold text-gray-900">{formatCurrency(v.monthlyMaintenanceCost)}</td>
+                        <td className="py-2 px-2 text-center">
+                          <span className={`inline-block rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${getWorkStatusColor(v.workStatus)}`}>
                             {getWorkStatusLabel(v.workStatus)}
                           </span>
                         </td>
@@ -871,48 +733,173 @@ const DashboardPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Maintenance Outlook */}
-          <section className="rounded-2xl bg-white p-4 shadow md:p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Maintenance Outlook</p>
-                <p className="text-sm text-gray-500">What is still due this month?</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => history.push('/maintenance-records')}
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+          {/* Average Fuel Efficiency - 2 columns */}
+          <section className="col-span-12 lg:col-span-2 rounded-xl bg-white p-4 shadow">
+            <div className="mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Avg Fuel Efficiency</p>
+              <p className="text-xs text-gray-500">km per liter</p>
+            </div>
+
+            <div className="flex items-center justify-between mb-3">
+              <select
+                value={efficiencyVehicleId}
+                onChange={(e) => setEfficiencyVehicleId(e.target.value)}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white w-full"
               >
-                Open register →
-              </button>
+                <option value="">All Vehicles</option>
+                {vehicleSummaries.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              <div className="rounded-xl border border-gray-200 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Due now / overdue</p>
-                <p className="mt-2 text-4xl font-semibold text-red-600">{formatNumber(maintenanceStats.dueThisMonth)}</p>
-                <p className="text-sm text-gray-500">Need attention this month.</p>
-              </div>
-              <div className="rounded-xl border border-gray-200 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Remaining reminders</p>
-                <p className="mt-2 text-4xl font-semibold text-amber-500">{formatNumber(maintenanceStats.remainingThisMonth)}</p>
-                <p className="text-sm text-gray-500">Scheduled later in {monthLabel}.</p>
-              </div>
-              <div className="rounded-xl border border-gray-200 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Maintenance spend</p>
-                <p className="mt-2 text-4xl font-semibold text-blue-600">{formatCurrency(maintenanceStats.totalCost)}</p>
-                <p className="text-sm text-gray-500">Total cost this month.</p>
-              </div>
+            <div className="flex items-center justify-center py-4">
+              {(() => {
+                let avgKmPerLiter: number | null = null;
+                
+                if (efficiencyVehicleId) {
+                  const selectedVehicle = vehicleSummaries.find(v => v.id === efficiencyVehicleId);
+                  avgKmPerLiter = selectedVehicle?.kmPerLiter ?? null;
+                } else {
+                  const vehiclesWithEfficiency = vehicleSummaries.filter(v => v.kmPerLiter != null);
+                  if (vehiclesWithEfficiency.length > 0) {
+                    const totalKmPerLiter = vehiclesWithEfficiency.reduce((sum, v) => sum + (v.kmPerLiter || 0), 0);
+                    avgKmPerLiter = totalKmPerLiter / vehiclesWithEfficiency.length;
+                  }
+                }
+
+                if (avgKmPerLiter == null) {
+                  return <p className="text-xs text-gray-400 text-center">No data</p>;
+                }
+
+                return (
+                  <div className="text-center">
+                    <p className="text-5xl font-bold text-blue-600">{avgKmPerLiter.toFixed(1)}</p>
+                    <p className="text-xs text-gray-500 mt-1">km/L</p>
+                  </div>
+                );
+              })()}
+            </div>
+          </section>
+
+          {/* Maintenance Outlook - 1 column (narrower) */}
+          <section className="col-span-12 lg:col-span-1 rounded-xl bg-white p-4 shadow">
+            <div className="mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Maintenance Outlook</p>
+              <p className="text-xs text-gray-500">What is still due this month?</p>
             </div>
 
-            <div className="mt-4 rounded-xl border border-dashed border-gray-200 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Quick tips</p>
-              <ul className="mt-2 list-disc list-inside text-sm text-gray-600 space-y-1">
-                <li>Review overdue tasks and log completed work.</li>
-                <li>Schedule time for remaining reminders before month end.</li>
-                <li>Attach receipts so your cost reports stay accurate.</li>
-              </ul>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="rounded-lg border border-gray-200 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-gray-500">Due now / overdue</p>
+                <p className="mt-1 text-2xl font-semibold text-red-600">{formatNumber(maintenanceStats.dueThisMonth)}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-gray-500">Remaining reminders</p>
+                <p className="mt-1 text-2xl font-semibold text-amber-500">{formatNumber(maintenanceStats.remainingThisMonth)}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-gray-500">Maintenance spend</p>
+                <p className="mt-1 text-2xl font-semibold text-blue-600">{formatCurrency(maintenanceStats.totalCost)}</p>
+              </div>
             </div>
+          </section>
+
+          {/* Price per Liter - 2 columns (matches Avg Fuel Efficiency) */}
+          <section className="col-span-12 lg:col-span-2 rounded-xl bg-white p-4 shadow">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-600">Price per Liter</p>
+                <p className="text-xs text-gray-500">Monthly fuel price trend</p>
+              </div>
+              <select
+                value={fuelTrendVehicleId}
+                onChange={(e) => setFuelTrendVehicleId(e.target.value)}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white"
+              >
+                <option value="">All Vehicles</option>
+                {vehicleSummaries.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {(() => {
+              const points = fuelTrendData.map((p) =>
+                p.fuelVolumeLiters > 0 ? p.fuelCost / p.fuelVolumeLiters : 0
+              );
+              const hasData = points.some((v) => v > 0);
+              if (!hasData) {
+                return <p className="text-xs text-gray-400 text-center py-6">No fuel costs logged this year.</p>;
+              }
+
+              const padding = { top: 10, right: 10, bottom: 10, left: 10 };
+              const viewHeight = 120;
+              const viewWidth = 300;
+              const chartH = viewHeight - padding.top - padding.bottom;
+              const chartW = viewWidth - padding.left - padding.right;
+              const valMax = Math.max(...points, 1);
+
+              const xScale = (i: number) => padding.left + (i / Math.max(points.length - 1, 1)) * chartW;
+              const yScale = (v: number) => padding.top + chartH - (v / valMax) * chartH;
+
+              const linePath = points
+                .map((v, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(v)}`)
+                .join(' ');
+
+              const handleFuelTrendMove = (e: React.MouseEvent<SVGSVGElement>) => {
+                const svg = e.currentTarget;
+                const rect = svg.getBoundingClientRect();
+                const mouseX = ((e.clientX - rect.left) / rect.width) * viewWidth;
+                const idx = points.reduce((best, _, i) =>
+                  Math.abs(xScale(i) - mouseX) < Math.abs(xScale(best) - mouseX) ? i : best, 0);
+                setFuelTrendHoveredPoint(idx);
+              };
+
+              return (
+                <svg
+                  viewBox={`0 0 ${viewWidth} ${viewHeight}`}
+                  className="w-full"
+                  style={{ height: viewHeight }}
+                  onMouseMove={handleFuelTrendMove}
+                  onMouseLeave={() => setFuelTrendHoveredPoint(null)}
+                >
+                  <line x1={padding.left} y1={padding.top + chartH} x2={padding.left + chartW} y2={padding.top + chartH} stroke="#e5e7eb" strokeWidth="0.5" />
+                  <path d={linePath} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+                  {points.map((v, i) => (
+                    <circle key={i} cx={xScale(i)} cy={yScale(v)}
+                      r={fuelTrendHoveredPoint === i ? 3 : 2}
+                      fill="#f59e0b" stroke="white" strokeWidth="1"
+                    />
+                  ))}
+                  {fuelTrendHoveredPoint !== null && fuelTrendHoveredPoint < fuelTrendData.length && (
+                    <g>
+                      <line x1={xScale(fuelTrendHoveredPoint)} y1={padding.top + chartH} x2={xScale(fuelTrendHoveredPoint)} y2={padding.top} stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2,2" />
+                      <rect
+                        x={Math.max(padding.left, Math.min(xScale(fuelTrendHoveredPoint) - 45, viewWidth - 100))}
+                        y={padding.top - 2}
+                        width="90" height="28" rx="4"
+                        fill="white" stroke="#d1d5db" strokeWidth="1"
+                      />
+                      <text
+                        x={Math.max(padding.left + 45, Math.min(xScale(fuelTrendHoveredPoint), viewWidth - 45))}
+                        y={padding.top + 10} textAnchor="middle"
+                        fill="#6b7280" fontSize="5"
+                      >
+                        {fuelTrendData[fuelTrendHoveredPoint].monthLabel}
+                      </text>
+                      <text
+                        x={Math.max(padding.left + 45, Math.min(xScale(fuelTrendHoveredPoint), viewWidth - 45))}
+                        y={padding.top + 22} textAnchor="middle"
+                        fill="#111827" fontWeight="600" fontSize="5"
+                      >
+                        {formatCurrency(points[fuelTrendHoveredPoint])}/L
+                      </text>
+                    </g>
+                  )}
+                </svg>
+              );
+            })()}
           </section>
         </div>
 
