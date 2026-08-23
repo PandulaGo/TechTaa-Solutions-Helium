@@ -36,8 +36,6 @@
 - Faster iteration on custom designs
 - Dark mode support built into Tailwind
 
----
-
 ### ADR-004: SHA256 + Salt over BCrypt / Argon2
 **Status:** Accepted
 **Context:** Needed a password hashing strategy.
@@ -47,8 +45,6 @@
 - However, SHA256 is a fast hash and not ideal for password storage
 - **Should be revisited:** BCrypt or Argon2id would be more resistant to brute-force attacks
 - This is a known technical debt item
-
----
 
 ### ADR-005: SQL Server LocalDB for Development
 **Status:** Accepted
@@ -70,8 +66,6 @@
 - No caching layer — every page re-fetches data on mount
 - As the app grows, React Query or Zustand should be introduced
 
----
-
 ### ADR-007: JWT with Bearer Token Authentication
 **Status:** Accepted
 **Context:** Needed a stateless auth mechanism for both web and future mobile clients.
@@ -83,8 +77,6 @@
 - **No refresh tokens:** once expired, user must re-login
 - Future improvement: add refresh token flow for better UX
 
----
-
 ### ADR-008: AutoMapper for Entity-to-DTO Mapping
 **Status:** Accepted
 **Context:** Domain entities differ significantly from API DTOs; manual mapping is tedious and error-prone.
@@ -94,8 +86,6 @@
 - Single profile file makes it easy to audit mappings
 - Can cause difficult-to-debug issues if not configured carefully
 - Tests should validate mapping configurations
-
----
 
 ### ADR-009: FluentValidation over Data Annotations
 **Status:** Accepted
@@ -107,8 +97,6 @@
 - Composable rules (e.g., reuse password rules across register and change-password)
 - Slightly more files, but cleaner separation
 
----
-
 ### ADR-010: Local File Storage over Cloud Storage
 **Status:** Accepted
 **Context:** Receipt images need to be stored somewhere; cloud storage adds cost and complexity.
@@ -118,8 +106,6 @@
 - Not suitable for production (single server, no backup, no CDN)
 - Future: replace with Azure Blob Storage or AWS S3 via the same interface
 
----
-
 ### ADR-011: Serilog for Logging
 **Status:** Accepted
 **Context:** Needed structured logging that works in development and production.
@@ -128,8 +114,6 @@
 - Structured JSON logging (easier to query than plain text)
 - Extensible with sinks (File, Elasticsearch, Seq, etc.)
 - Currently only console sink configured; can add sinks without code changes
-
----
 
 ### ADR-012: Per-Fill-Up Efficiency Calculation
 **Status:** Accepted
@@ -141,8 +125,6 @@
 - Same logic applies to km/kWh for EV charging entries
 - Hybrids get separate fuel and electric efficiency using only their respective entry types
 
----
-
 ### ADR-013: Collapsible Sidebar
 **Status:** Accepted
 **Context:** The sidebar navigation consumed significant horizontal space on smaller screens.
@@ -152,8 +134,6 @@
 - Simple to implement (local `sidebarExpanded` state only)
 - No icon-only nav items in collapsed mode (keeps implementation simple)
 
----
-
 ### ADR-014: km/L over L/100km
 **Status:** Accepted
 **Context:** Initially implemented as L/100km (European standard), but the user prefers km/L which is more intuitive for their use case.
@@ -162,8 +142,6 @@
 - Higher = better (intuitive for most users)
 - Common in Asian and US markets
 - L/100km can be added as an alternative display option in the future
-
----
 
 ### ADR-015: PIN-Based Passwordless Login (Email + Gmail SMTP)
 **Status:** Accepted (design approved; implementation pending)
