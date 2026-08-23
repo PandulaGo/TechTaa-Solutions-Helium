@@ -392,6 +392,13 @@ Expires: DateTime.UtcNow + 120 minutes
 3. Compare hash with stored hash
 4. Return JWT token on match; throw `UnauthorizedAccessException` on mismatch
 
+### 10.5 Planned: PIN-Based Passwordless Login (ADR-015)
+> Design approved, not yet implemented. The flow below will replace sections 10.3–10.4.
+
+1. `POST /api/auth/send-pin` — generate 6-digit PIN, store in `IMemoryCache` (`pin:{email}`, 5-min expiry), email via Gmail SMTP (MailKit); dev mode logs PIN to console instead
+2. `POST /api/auth/verify-pin` — validate PIN against cache; auto-create user if email is new; return JWT + user
+3. First-time users complete profile via `PATCH /api/users/me` on an `/onboarding` page (first/last name required; address, mobile optional) before reaching the dashboard
+
 ---
 
 ## 11. API URL Configuration

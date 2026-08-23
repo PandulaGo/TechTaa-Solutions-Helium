@@ -72,7 +72,7 @@ dotnet run --project Helium.Api/Helium.Api.csproj
 
 The API starts on:
 - `http://localhost:10011`
-- `https://localhost:7165`
+- `https://localhost:10012`
 
 To verify: visit `http://localhost:10011/api/health` — should return `{"status":"ok"}`.
 
@@ -130,7 +130,18 @@ Requires an emulator or physical device.
 
 ---
 
-## 5. Verify Everything Works
+## 5. One-Click Launcher (AutoHotkey)
+
+`start-helium.ahk` (repo root) starts the stack interactively:
+
+- **Yes** → Backend (`dotnet run --project Helium.Api`) + Frontend (`npm start`), then opens `http://localhost:10015`
+- **No** → Frontend only
+
+Requires [AutoHotkey v2](https://www.autohotkey.com/). Double-click to run, or copy it into the Windows Startup folder (`shell:startup`) to launch automatically at login.
+
+---
+
+## 6. Verify Everything Works
 
 1. Backend is running → `http://localhost:10011/api/health` returns ok
 2. Frontend is running → `http://localhost:10015` loads

@@ -88,6 +88,7 @@ graph LR
 - **State**: Local component state (no Redux/Zustand)
 - **Styling**: Tailwind CSS exclusively (Bootstrap removed)
 - **Layout**: Collapsible sidebar (expand/collapse toggle), sticky viewport-locked navigation, scrollable main content area
+- **Branding**: Vehicle-themed SVG favicon (`web/public/favicon.svg` — blue badge with car silhouette + speedometer arc) referenced from `public/index.html`; shown as the browser tab icon
 - **Dashboard Sections**: Action buttons, efficiency cards (km/L & km/kWh per vehicle), price per liter trend chart (with hover tooltips), cost overview line chart, fleet snapshot table, maintenance outlook, recent activity feed
 
 ### Mobile App (Flutter)

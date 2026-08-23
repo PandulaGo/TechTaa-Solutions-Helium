@@ -27,6 +27,7 @@ Helium App/
 │   └── helium-frontend/
 │       ├── web/                 # React + TypeScript + Tailwind CSS web app
 │       └── mobile/              # Flutter mobile app (scaffolded)
+├── start-helium.ahk             # AutoHotkey launcher (backend + frontend, prompts on start)
 └── docs/                        # Project documentation (this folder)
 ```
 

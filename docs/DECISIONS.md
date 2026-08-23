@@ -185,4 +185,24 @@ This document captures the rationale behind key technical decisions made during 
 
 ---
 
+## ADR-015: PIN-Based Passwordless Login (Email + Gmail SMTP)
+
+**Status:** Accepted (design approved; implementation pending)  
+**Context:** Password login brings ongoing burdens — password hashing debt (see ADR-004), forgot-password flows, and signup friction. The email inbox itself is a sufficient proof of identity for a personal fleet-tracking app.  
+**Decision:** Replace password authentication with an email PIN flow:
+1. User submits email → backend generates a 6-digit PIN, stores it in `IMemoryCache` (`pin:{email}` key, 5-minute expiry) and emails it via Gmail SMTP (MailKit, port 587, Google App Password).
+2. User submits the PIN → on match the account is auto-created if it doesn't exist (email = identity) and a JWT is returned.
+3. First-time users are redirected to an `/onboarding` page to complete their profile (first/last name required; address, mobile number optional) via `PATCH /api/users/me`. Returning users go straight to the dashboard.
+
+A dev-mode flag (`IsDevelopmentMode`) logs the PIN to the console instead of sending email. Registration page and password DTOs/validators are removed.  
+**Consequences:**
+- No passwords to hash, store, reset, or leak — retires ADR-004's SHA256 hashing concern
+- `SignupPage` deleted; account creation happens implicitly at first PIN verification
+- Security now depends on email inbox security (Gmail 2FA) — acceptable for this app's threat model
+- Gmail SMTP limits: 500 emails/day; requires App Password setup
+- `IMemoryCache` PINs don't survive backend restarts — acceptable (user just requests a new PIN)
+- Rate limiting / resend cooldown needed to prevent PIN spam (60s frontend cooldown planned)
+
+---
+
 *This is a living document. Add new ADRs as decisions are made.*

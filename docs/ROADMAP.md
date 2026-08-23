@@ -37,11 +37,14 @@ This document captures planned features, value-add ideas, and improvements for t
 - **Why:** Receipt tracking is a core feature but currently requires users to manually type a URL.
 - **Effort:** Medium (1 endpoint + 1 component + form update)
 
-### 4. Forgot Password / Reset Password Flow
-- Backend: email-based reset token generation + verification
-- Frontend: forgot-password page, reset-password page
-- **Why:** Login page already links to `/forgot-password` which is a 404 today.
-- **Effort:** Medium (2 endpoints + 2 pages + email integration)
+### 4. PIN-Based Passwordless Login (supersedes Forgot Password)
+- Replace email+password login with: user enters email → 6-digit PIN emailed via Gmail SMTP → user enters PIN → JWT issued
+- Auto-create account on first PIN verification (no registration page); new users complete profile on an `/onboarding` page (first/last name required; address, mobile number optional)
+- Backend: `POST /api/auth/send-pin`, `POST /api/auth/verify-pin`, `PATCH /api/users/me`; PIN stored in `IMemoryCache` with 5-min expiry
+- Frontend: two-stage `LoginPage`, new `OnboardingPage`; delete `SignupPage`
+- **Why:** Removes password management entirely (no forgot-password flow needed); email inbox is the proof of identity.
+- **Effort:** Medium (2 auth endpoints + profile endpoint + 1 new page + login rewrite + MailKit/Gmail SMTP setup)
+- **Status:** Design approved — see ADR-015. Not yet implemented.
 
 ### 5. Pagination in List Pages ✅
 - Backend already supports `PaginationQuery`/`PagedResult<T>`
@@ -165,8 +168,8 @@ Phase 1 (Quick Wins)
 └── Loading Skeletons
 
 Phase 2 (Core UX)
+├── PIN-Based Passwordless Login (ADR-015, design approved)
 ├── User Profile & Settings
-├── Forgot / Reset Password
 ├── Receipt Upload & Viewer
 └── Search & Filters
 
