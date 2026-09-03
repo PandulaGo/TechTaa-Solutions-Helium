@@ -8,11 +8,11 @@
 
 > **AI Instruction:** Update this section at the end of every session so the secondary machine can immediately sync and restore the exact runtime state.
 
-* **Last Updated:** `2026-09-02 12:00 PM`
+* **Last Updated:** `2026-09-03 12:00 PM`
 * **Active Computer / OS:** `Work PC (Windows)`
 * **Git Branch:** `master`
 * **Last Commit Hash:** `954e302` ("Remove unwanted files from doc folder")
-* **Uncommitted File Changes:** `docs/Architecture and Other Details.md` (Modified — regenerated per updated doc agent template), `docs/Context Ledger.md` (Modified — regenerated per updated doc agent template)
+* **Uncommitted File Changes:** `README.md` (Created — install/startup/docs + screenshots), `docs/Architecture and Other Details.md` (Modified — regenerated per updated doc agent template), `docs/Context Ledger.md` (Modified — regenerated per updated doc agent template), `docs/screenshots/*.png` (Created — 8 app screenshots), `.gitignore` (Modified — added DB file extensions)
 * **Active Port / Local Services Running:** `API on :10011 (HTTP) / :10012 (HTTPS), Web on :10015`
 * **Required Environment Variables / Flags:** `NODE_OPTIONS=--openssl-legacy-provider` (frontend start script), JWT secret `CHANGE_ME_TO_A_SECURE_32_CHAR_SECRET` (dev default), SQL Server LocalDB `HeliumAppDb`
 
@@ -21,6 +21,48 @@
 ## 2. Session History Ledger
 
 > **AI Instruction:** Always append new sessions at the **top** of this list directly below this header. Do not delete past entries.
+
+### `[2026-09-03 12:00]` - Session `[6]`: `README Creation, App Screenshots & .gitignore Update`
+
+#### 1. Active Focus & Target Objective
+* **Primary Objective:** Create a comprehensive `README.md` at the project root with installation instructions, application startup IP/port details, npm package installation, and the documentation from the docs folder. Also capture screenshots of the running frontend and update `.gitignore` with database file extensions.
+* **Context Bridge:** The docs folder had been regenerated per the updated doc agent template (Session 5). The user then requested a README with install/startup details and documentation, plus screenshots of the frontend, and a `.gitignore` update for database files.
+
+#### 2. Comprehensive Changes & File Ledger
+* **Files Modified / Created:
+  * `README.md` (Created — 499 lines: features, screenshots, tech stack, prerequisites, installation, startup IP/ports, first-time login, common issues, full documentation reproduction, license)
+  * `docs/screenshots/home.png` (Created — Home page screenshot)
+  * `docs/screenshots/login.png` (Created — Login page screenshot)
+  * `docs/screenshots/signup.png` (Created — Signup page screenshot)
+  * `docs/screenshots/dashboard.png` (Created — Dashboard screenshot, 64 KB)
+  * `docs/screenshots/vehicles.png` (Created — Vehicles page screenshot)
+  * `docs/screenshots/fuel-entries.png` (Created — Fuel entries page screenshot)
+  * `docs/screenshots/charging-entries.png` (Created — Charging entries page screenshot)
+  * `docs/screenshots/maintenance-records.png` (Created — Maintenance records page screenshot)
+  * `.gitignore` (Modified — added `*.mdf`, `*.ldf`, `*.sqlite3`, `*.db-journal` under new `# Database files` section)
+  * `docs/Context Ledger.md` (Modified — this session entry + machine context update)
+* **Structural & Logical Implementations:**
+  * README includes a Screenshots section with all 8 captured images referenced via relative paths (`docs/screenshots/*.png`).
+  * Screenshots captured via headless Chrome (`--headless=new --screenshot`) with a persistent user-data-dir to store the JWT token in localStorage for authenticated pages (dashboard, vehicles, fuel/charging/maintenance entries).
+  * `.gitignore` now ignores SQL Server LocalDB MDF/LDF files and SQLite files.
+* **Key Dependencies Added/Removed:** None (documentation + config only).
+
+#### 3. State Handover & Next Engineering Actions
+* **Current Working State:** `Fully Functional — README created, 8 screenshots captured, .gitignore updated, both apps verified running on :10011 and :10015`
+* **Active Blockers / Unhandled Edge Cases:**
+  * PIN-based passwordless login (ADR-015) design approved but **not implemented**.
+  * NotificationService is a log-only stub.
+  * No route guard / auth context on frontend.
+  * No pagination controls on frontend.
+  * Receipt upload is a URL text field only (no file picker/download endpoint).
+* **Exact Next Actions (For Machine Switch Handover):**
+  1. Implement PIN-based passwordless login per ADR-015 (backend: MailKit + EmailService + `send-pin`/`verify-pin` endpoints; frontend: LoginPage rewrite + OnboardingPage; add `PATCH /api/users/me`).
+  2. Add route guard/auth context and pagination component.
+  3. Implement real receipt upload + file download endpoint.
+  4. Wire up real email notifications.
+* **Notes / Edge Cases Discovered:** Screenshots captured with headless Chrome require a persistent `--user-data-dir` to persist the JWT token in localStorage for authenticated pages. The `chrome-profile` temp directory was cleaned up after capture. Screenshots could not be visually verified (model does not support image input) but file sizes (14–64 KB) confirm pages rendered with content.
+
+---
 
 ### `[2026-09-02 12:00]` - Session `[5]`: `Documentation Regeneration per Updated Doc Agent Template`
 

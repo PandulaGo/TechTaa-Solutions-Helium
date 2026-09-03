@@ -7,6 +7,7 @@
 ## Table of Contents
 
 - [Features](#features)
+- [Screenshots](#screenshots)
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
@@ -38,6 +39,42 @@
 - **Maintenance Records** — Track services with cost, garage, mechanic, work status, and optional reminders (mileage- or time-based).
 - **Dashboard Analytics** — Cost overview SVG chart, fleet snapshot, average fuel efficiency, maintenance outlook, price per liter, and recent activity.
 - **JWT Authentication** — Secure register/login with bearer token authorization.
+
+---
+
+## Screenshots
+
+### Home Page
+
+![Home Page](docs/screenshots/home.png)
+
+### Login Page
+
+![Login Page](docs/screenshots/login.png)
+
+### Signup Page
+
+![Signup Page](docs/screenshots/signup.png)
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Vehicles
+
+![Vehicles](docs/screenshots/vehicles.png)
+
+### Fuel Entries
+
+![Fuel Entries](docs/screenshots/fuel-entries.png)
+
+### Charging Entries
+
+![Charging Entries](docs/screenshots/charging-entries.png)
+
+### Maintenance Records
+
+![Maintenance Records](docs/screenshots/maintenance-records.png)
 
 ---
 
